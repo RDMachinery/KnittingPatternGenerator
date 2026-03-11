@@ -6,7 +6,7 @@
   ██║  ██╗██║ ╚████║██║   ██║      ██║   ██║██║ ╚████║╚██████╔╝
   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝   ╚═╝      ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
               P A T T E R N   G E N E R A T O R
-
+                  Written By Mario Gianota (mariogianota@protonmail.com) 9 March 2026
 Charts are read from BOTTOM to TOP, as in standard knitting convention.
 RS rows (odd) are read right to left. WS rows (even) left to right.
 
