@@ -11,58 +11,6 @@ Charts are read from BOTTOM to TOP, as in standard knitting convention.
 RS rows (odd) are read right to left. WS rows (even) left to right.
 
 ╔══════════════════════════════════════════════════╗
-║  PATTERN 1: FAIR ISLE DIAMOND MOTIF              ║
-╚══════════════════════════════════════════════════╝
-
-Yarn A: Main colour (e.g. cream)
-Yarn B: Contrast colour (e.g. navy)
-Cast on: multiple of 12 stitches
-
-KEY:
-  █ = Yarn A (main colour), knit stitch
-  █ = Yarn B (contrast colour), knit stitch
-
-    +------------------------+
-  1 │████████████████████████│  ← RS (read right to left)
-  2 │████████████████████████│  → WS (read left to right)
-  3 │████████████████████████│  ← RS (read right to left)
-  4 │████████████████████████│  → WS (read left to right)
-  5 │████████████████████████│  ← RS (read right to left)
-  6 │████████████████████████│  → WS (read left to right)
-  7 │████████████████████████│  ← RS (read right to left)
-  8 │████████████████████████│  → WS (read left to right)
-  9 │████████████████████████│  ← RS (read right to left)
- 10 │████████████████████████│  → WS (read left to right)
- 11 │████████████████████████│  ← RS (read right to left)
- 12 │████████████████████████│  → WS (read left to right)
- 13 │████████████████████████│  ← RS (read right to left)
- 14 │████████████████████████│  → WS (read left to right)
- 15 │████████████████████████│  ← RS (read right to left)
- 16 │████████████████████████│  → WS (read left to right)
- 17 │████████████████████████│  ← RS (read right to left)
- 18 │████████████████████████│  → WS (read left to right)
- 19 │████████████████████████│  ← RS (read right to left)
- 20 │████████████████████████│  → WS (read left to right)
- 21 │████████████████████████│  ← RS (read right to left)
- 22 │████████████████████████│  → WS (read left to right)
- 23 │████████████████████████│  ← RS (read right to left)
- 24 │████████████████████████│  → WS (read left to right)
-    +------------------------+
-
-WRITTEN INSTRUCTIONS:
-All rows: knit every stitch, changing colours as shown in chart.
-Carry yarn not in use loosely across wrong side (stranded knitting).
-
-Row 1  (RS): *K5A, K2B, K5A* repeat to end
-Row 2  (WS): *P4A, P4B, P4A* repeat to end
-Row 3  (RS): *K3A, K6B, K3A* repeat to end
-Row 4  (WS): *P2A, P8B, P2A* repeat to end
-Row 5  (RS): *K1A, K10B, K1A* repeat to end
-Row 6  (RS): *K12B* repeat to end
-Rows 7-12: work rows 5-1 in reverse (mirror image)
-Repeat these 12 rows for pattern length required.
-
-╔══════════════════════════════════════════════════╗
 ║  PATTERN 2: FEATHER AND FAN LACE                 ║
 ╚══════════════════════════════════════════════════╝
 
