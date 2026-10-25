@@ -43,6 +43,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.*;
 import java.util.prefs.Preferences;
 
@@ -1378,15 +1382,140 @@ public class KnittingPattern {
         }
     }
 
+    /**
+     * Keeps the screensaver and display sleep away while the row tracker is in use.
+     * Java has no built-in way to do this, so each system gets its own method:
+     *   macOS   - the built-in caffeinate command holds the display awake for as long
+     *             as this program runs, and is told the user is active every 30 seconds.
+     *   Linux   - "xdg-screensaver reset" every 30 seconds, or a mouse nudge if it's missing.
+     *   Windows - the mouse pointer is nudged 1 pixel and back every 30 seconds,
+     *             which resets the idle timer without visibly moving it.
+     * It gives up after a stretch with no row changes, so a forgotten tracker
+     * doesn't keep the screen on all night.
+     */
+    static final class KeepAwake {
+        static final int NUDGE_SECONDS = 30;
+        static final int IDLE_LIMIT_MINUTES = 30;
+
+        final String os;
+        long idleLimitMs = IDLE_LIMIT_MINUTES * 60_000L;
+        private final Runnable onChange;
+        private final ScheduledExecutorService ticker = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "keep-screen-awake");
+            t.setDaemon(true);
+            return t;
+        });
+        private ScheduledFuture<?> task;
+        private Process holder;
+        private Robot robot;
+        private Boolean hasXdg;
+        private volatile long deadline;
+        private volatile boolean active, expired;
+
+        KeepAwake(String osName, Runnable onChange) {
+            this.os = osName.toLowerCase(Locale.ROOT);
+            this.onChange = onChange;
+        }
+
+        boolean isMac()     { return os.contains("mac"); }
+        boolean isWindows() { return os.contains("win"); }
+        boolean isActive()  { return active; }
+        boolean isExpired() { return expired; }
+
+        /** caffeinate is part of every Mac since 2012; elsewhere a mouse nudge needs a screen. */
+        boolean supported() { return isMac() || !GraphicsEnvironment.isHeadless(); }
+
+        /** Starts keeping the screen awake, or pushes back the time limit if it already is. */
+        synchronized void start() {
+            deadline = System.currentTimeMillis() + idleLimitMs;
+            expired = false;
+            if (active || !supported()) return;
+            active = true;
+            if (isMac()) holder = launch(caffeinate(), "-d", "-i", "-w", String.valueOf(ProcessHandle.current().pid()));
+            task = ticker.scheduleAtFixedRate(this::tick, 0, NUDGE_SECONDS, TimeUnit.SECONDS);
+            onChange.run();
+        }
+
+        synchronized void stop() {
+            if (!active) return;
+            active = false;
+            if (task != null) task.cancel(false);
+            if (holder != null) holder.destroy();
+            task = null;
+            holder = null;
+            onChange.run();
+        }
+
+        private void tick() {
+            if (System.currentTimeMillis() > deadline) {
+                expired = true;
+                stop();
+                return;
+            }
+            try {
+                if (isMac()) launch(caffeinate(), "-u", "-t", "2");
+                else if (!isWindows() && xdgAvailable()) launch("xdg-screensaver", "reset");
+                else nudgeMouse();
+            } catch (RuntimeException ignored) {
+                // Best effort: if this fails, the screensaver just behaves as normal.
+            }
+        }
+
+        static String caffeinate() {
+            return Files.isExecutable(Path.of("/usr/bin/caffeinate")) ? "/usr/bin/caffeinate" : "caffeinate";
+        }
+
+        private boolean xdgAvailable() {
+            if (hasXdg == null) {
+                hasXdg = false;
+                String path = System.getenv("PATH");
+                if (path != null)
+                    for (String dir : path.split(File.pathSeparator))
+                        if (!dir.isEmpty() && Files.isExecutable(Path.of(dir, "xdg-screensaver"))) hasXdg = true;
+            }
+            return hasXdg;
+        }
+
+        private static Process launch(String... command) {
+            try {
+                return new ProcessBuilder(command)
+                        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                        .redirectError(ProcessBuilder.Redirect.DISCARD)
+                        .start();
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        private void nudgeMouse() {
+            try {
+                if (robot == null) robot = new Robot();
+                PointerInfo p = MouseInfo.getPointerInfo();
+                if (p == null) return;
+                Point at = p.getLocation();
+                robot.mouseMove(at.x + 1, at.y);
+                robot.mouseMove(at.x, at.y);
+            } catch (AWTException | SecurityException ignored) {
+                // No permission to move the pointer: nothing more we can do.
+            }
+        }
+    }
+
     /** Follow along row by row; your place is remembered for each pattern. */
     static final class TrackerPanel extends JPanel {
         static final Preferences PREFS = prefsNode();
+        static final String KEEP_AWAKE_PREF = "~keep-screen-awake";
         final IntConsumer highlighter;
         Chart chart;
         int row = 1;   // the row you are about to work, counted from the cast-on (1-based)
+        boolean inUse;  // the tracker tab is showing and the window isn't minimised
 
-        final JLabel big = new JLabel(), sub = new JLabel(), nextLabel = new JLabel();
+        final JLabel big = new JLabel(), sub = new JLabel(), nextLabel = new JLabel(), awakeLabel = new JLabel();
         final JTextArea text = new JTextArea();
+        final JCheckBox awakeBox = new JCheckBox("Keep the screen awake while I'm using the tracker",
+                PREFS == null || PREFS.getBoolean(KEEP_AWAKE_PREF, true));
+        final KeepAwake awake = new KeepAwake(System.getProperty("os.name", ""),
+                () -> SwingUtilities.invokeLater(this::updateAwakeLabel));
 
         static Preferences prefsNode() {
             try { return Preferences.userRoot().node("knitting-pattern-studio/tracker"); }
@@ -1439,11 +1568,29 @@ public class KnittingPattern {
                     + "Keep this tab open and the chart highlights the row you're on.</html>");
             tip.setForeground(new Color(0x6E6660));
 
+            awakeBox.setOpaque(false);
+            awakeBox.setFocusable(false);
+            awakeBox.setToolTipText("Stops the screensaver and screen sleep while this tab is open. "
+                    + "The screen may sleep again " + KeepAwake.IDLE_LIMIT_MINUTES + " minutes after your last row change.");
+            awakeBox.addActionListener(e -> {
+                if (PREFS != null) PREFS.putBoolean(KEEP_AWAKE_PREF, awakeBox.isSelected());
+                applyAwake();
+            });
+            awakeLabel.setForeground(new Color(0x6E6660));
+            awakeLabel.setFont(awakeLabel.getFont().deriveFont(11.5f));
+
+            JPanel foot = new JPanel(new GridLayout(0, 1, 0, 2));
+            foot.setOpaque(false);
+            foot.add(awakeBox);
+            foot.add(awakeLabel);
+            foot.add(tip);
+
             JPanel south = new JPanel(new BorderLayout(0, 12));
             south.setOpaque(false);
             south.add(nextLabel, BorderLayout.NORTH);
             south.add(buttons, BorderLayout.CENTER);
-            south.add(tip, BorderLayout.SOUTH);
+            south.add(foot, BorderLayout.SOUTH);
+            updateAwakeLabel();
 
             add(head, BorderLayout.NORTH);
             JScrollPane sp = new JScrollPane(text);
@@ -1461,6 +1608,7 @@ public class KnittingPattern {
             chart = c;
             row = PREFS == null ? 1 : Math.max(1, PREFS.getInt(key(), 1));
             refresh();
+            applyAwake();
         }
 
         void move(int d) { setRow(Math.max(1, row + d)); }
@@ -1469,6 +1617,36 @@ public class KnittingPattern {
             row = r;
             if (PREFS != null) PREFS.putInt(key(), row);
             refresh();
+            applyAwake();   // every row change restarts the time limit
+        }
+
+        /** Told by the window whenever the tracker becomes visible or hidden. */
+        void setInUse(boolean on) {
+            inUse = on;
+            applyAwake();
+        }
+
+        void applyAwake() {
+            if (inUse && awakeBox.isSelected()) awake.start();
+            else awake.stop();
+            updateAwakeLabel();
+        }
+
+        void updateAwakeLabel() {
+            if (!awake.supported()) {
+                awakeBox.setEnabled(false);
+                awakeLabel.setText("Keeping the screen awake isn't available on this computer.");
+            } else if (!awakeBox.isSelected()) {
+                awakeLabel.setText("Your screensaver and screen sleep work as normal.");
+            } else if (awake.isActive()) {
+                awakeLabel.setText("Screen kept awake until " + KeepAwake.IDLE_LIMIT_MINUTES
+                        + " minutes after your last row change.");
+            } else if (awake.isExpired()) {
+                awakeLabel.setText("No row change for " + KeepAwake.IDLE_LIMIT_MINUTES
+                        + " minutes, so the screen may sleep. Press a row button to wake it.");
+            } else {
+                awakeLabel.setText("The screen is kept awake while this tab is open.");
+            }
         }
 
         int chartRow() { return chart == null ? -1 : (row - 1) % chart.height(); }
@@ -1682,7 +1860,11 @@ public class KnittingPattern {
         StudioFrame(List<Chart> charts, Chart initial) {
             super(APP_NAME);
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-            addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) { quit(); } });
+            addWindowListener(new WindowAdapter() {
+                @Override public void windowClosing(WindowEvent e)     { quit(); }
+                @Override public void windowIconified(WindowEvent e)   { tracker.setInUse(false); }
+                @Override public void windowDeiconified(WindowEvent e) { tracker.setInUse(trackerInUse()); }
+            });
             charts.forEach(model::addElement);
 
             tracker = new TrackerPanel(r -> {
@@ -1775,6 +1957,7 @@ public class KnittingPattern {
             tabs.addChangeListener(e -> {
                 chartPanel.highlight = tabs.getSelectedComponent() == tracker ? tracker.chartRow() : -1;
                 chartPanel.repaint();
+                tracker.setInUse(trackerInUse());
             });
 
             JSplitPane right = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, centre, tabs);
@@ -2246,12 +2429,17 @@ public class KnittingPattern {
             JOptionPane.showMessageDialog(this, what + ".\n\n" + ex.getMessage(), "Sorry", JOptionPane.WARNING_MESSAGE);
         }
 
+        boolean trackerInUse() {
+            return tabs.getSelectedIndex() == TRACKER_TAB && (getExtendedState() & Frame.ICONIFIED) == 0;
+        }
+
         void quit() {
             List<String> unsaved = new ArrayList<>();
             for (int i = 0; i < model.size(); i++) if (model.get(i).dirty) unsaved.add(model.get(i).name);
             if (!unsaved.isEmpty() && JOptionPane.showConfirmDialog(this,
                     "These patterns have changes that aren't saved:\n  " + String.join("\n  ", unsaved) + "\n\nQuit anyway?",
                     "Unsaved changes", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) return;
+            tracker.awake.stop();
             dispose();
             System.exit(0);
         }
