@@ -4,7 +4,7 @@
 
 Knitting Pattern Studio shows a knitting chart and its written, row-by-row instructions side by side. Both come from the same chart, so they always agree. It keeps your place as you knit, works out how many stitches to cast on and roughly how much yarn to buy, and checks your own designs for mistakes before you pick up your needles.
 
-![The Fair Isle Diamonds pattern in Knitting Pattern Studio](screenshots/fair-isle.png)
+![The Fair Isle Diamonds pattern in Knitting Pattern Studio](fair-isle.png)
 
 ---
 
@@ -79,7 +79,7 @@ The complete written pattern: cast-on, yarns, a key with every symbol used, the 
 
 ### Row tracker
 
-![The row tracker following the Rope Cable](screenshots/row-tracker.png)
+![The row tracker following the Rope Cable](row-tracker.png)
 
 The tracker shows the row you're about to knit in large print, says whether it's a right-side or wrong-side row, and previews the row after it. The row is also highlighted on the chart.
 
@@ -92,7 +92,7 @@ Each pattern remembers its own place, so you can keep a scarf and a hat on the g
 
 ### Size & yarn
 
-![The size and yarn calculator](screenshots/size-and-yarn.png)
+![The size and yarn calculator](size-and-yarn.png)
 
 1. Choose **centimetres or inches**.
 2. Choose your **yarn weight**. This fills in typical gauge figures. If you've knitted a gauge swatch, which is always a good idea, type in your own numbers instead.
@@ -159,7 +159,7 @@ The built-in patterns can't be changed by accident. If you edit one, the program
 
 ## Designing your own pattern
 
-![Editing a copy of Feather and Fan](screenshots/editing.png)
+![Editing a copy of Feather and Fan](editing.png)
 
 1. Choose **New…** (bottom left). Give the pattern a name, choose how many stitches wide and rows high one repeat is, and how many colours it uses. Tick **Knitted in the round** or **A single panel** if they apply.
 2. The chart opens in **edit mode**. Two rows of buttons appear above it:
