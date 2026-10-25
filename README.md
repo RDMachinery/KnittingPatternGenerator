@@ -1,3 +1,5 @@
+![Banner image](banner.jpeg)
+
 # Knitting Pattern Studio
 
 **Design, view and follow knitting charts on your computer — free.**
