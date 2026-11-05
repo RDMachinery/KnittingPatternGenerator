@@ -73,12 +73,19 @@ public class KnittingPattern {
         SK2P     ('^', 3, 1, 1, "sk2p",  null,    "SK2P"),
         M1L      ('L', 0, 1, 1, "M1L",   null,    "M1L"),
         M1R      ('R', 0, 1, 1, "M1R",   null,    "M1R"),
+        SL1      ('V', 1, 1, 1, "sl1 wyib", "sl1 wyif", "Slip 1"),
+        K1TBL    ('T', 1, 1, 1, "k1tbl", "p1tbl", "K1tbl"),
+        BOBBLE   ('@', 1, 1, 1, "MB",    null,    "Bobble"),
+        C2F      ('C', 1, 1, 2, "C2F",   null,    "C2F"),
+        C2B      ('D', 1, 1, 2, "C2B",   null,    "C2B"),
         C4F      ('F', 1, 1, 4, "C4F",   null,    "C4F"),
         C4B      ('B', 1, 1, 4, "C4B",   null,    "C4B"),
         C6F      ('G', 1, 1, 6, "C6F",   null,    "C6F"),
         C6B      ('H', 1, 1, 6, "C6B",   null,    "C6B"),
         C8F      ('X', 1, 1, 8, "C8F",   null,    "C8F"),
         C8B      ('Y', 1, 1, 8, "C8B",   null,    "C8B"),
+        T4F      ('P', 1, 1, 4, "T4F",   null,    "T4F"),
+        T4B      ('Q', 1, 1, 4, "T4B",   null,    "T4B"),
         NO_STITCH('#', 0, 0, 1, "",      "",      "No stitch");
 
         final char symbol;
@@ -92,6 +99,8 @@ public class KnittingPattern {
 
         boolean isCable()       { return width > 1; }
         boolean frontCross()    { return isCable() && name().endsWith("F"); }
+        /** A travelling stitch: knit stitches crossing over purl ones, rather than knit over knit. */
+        boolean travels()       { return isCable() && name().startsWith("T"); }
         boolean rightSideOnly() { return ws == null; }
 
         String description(boolean inTheRound) {
@@ -105,12 +114,25 @@ public class KnittingPattern {
                 case SK2P:  return "SK2P: slip 1 knitwise, k2tog, then pass the slipped stitch over. A double decrease: 3 stitches become 1.";
                 case M1L:   return "M1L: pick up the bar between stitches from front to back and knit it through the back loop. A left-leaning increase.";
                 case M1R:   return "M1R: pick up the bar between stitches from back to front and knit it through the front loop. A right-leaning increase.";
+                case SL1:   return "Slip 1: slip the next stitch purlwise to the right needle without working it, "
+                                 + "with the yarn at the back" + (inTheRound ? "." : " (on a wrong-side row, with the yarn at the front, "
+                                 + "so the strand stays on the wrong side).");
+                case K1TBL: return "K1tbl: knit 1 through the back loop. This twists the stitch so it stands up crisp and neat"
+                                 + (inTheRound ? "." : " (on a wrong-side row, p1tbl).");
+                case BOBBLE: return "Make bobble: (k1, p1, k1, p1, k1) all into the next stitch to make 5 stitches; turn and p5; "
+                                 + "turn and k5; then pass the 2nd, 3rd, 4th and 5th stitches over the first. 1 stitch becomes a round knob.";
                 case NO_STITCH: return "No stitch: a placeholder square. Skip it and carry on with the next square.";
+                case T4F:   return "T4F (twist 4 front): slip 2 stitches to a cable needle and hold at the front of the work, purl 2, "
+                                 + "then knit 2 from the cable needle. The knit stitches travel to the left over the purl background.";
+                case T4B:   return "T4B (twist 4 back): slip 2 stitches to a cable needle and hold at the back of the work, knit 2, "
+                                 + "then purl 2 from the cable needle. The knit stitches travel to the right over the purl background.";
                 default: {
                     int h = width / 2;
-                    return label + ": slip " + h + " stitches to a cable needle and hold at the "
+                    String sts = h == 1 ? "1 stitch" : h + " stitches";
+                    return label + ": slip " + sts + " to a cable needle and hold at the "
                          + (frontCross() ? "front" : "back") + " of the work, knit " + h
-                         + ", then knit " + h + " from the cable needle.";
+                         + ", then knit " + h + " from the cable needle."
+                         + (h == 1 ? " (Many knitters do this without a cable needle.)" : "");
                 }
             }
         }
@@ -215,7 +237,9 @@ public class KnittingPattern {
     static final class BuiltIns {
 
         static List<Chart> all() {
-            return new ArrayList<>(List.of(fairIsle(), featherAndFan(), ropeCable(), horseshoeCable(), rib2x2(), seedStitch()));
+            return new ArrayList<>(List.of(fairIsle(), houndstooth(), featherAndFan(), horseshoeLace(), ropeCable(), horseshoeCable(),
+                    honeycombCable(), bobbleDiamond(), miniCableRib(), garterStitch(), rib2x2(), twistedRib(), seedStitch(),
+                    basketweave(), heelStitch()));
         }
 
         /** Builds a chart from rows written top-down, exactly as the chart looks on paper. */
@@ -259,6 +283,39 @@ public class KnittingPattern {
             return c;
         }
 
+        static Chart houndstooth() {
+            String[] colours = { "ABBB", "AAAB", "AAAB", "BAAA" };
+            Chart c = build("Houndstooth", true, false, repeatRow("....", 4), colours,
+                    new Yarn("A", "Cream", new Color(0xF3EAD7)), new Yarn("B", "Charcoal", new Color(0x3A3634)));
+            c.description = "The classic broken check, knitted small. A tiny 4-stitch repeat that's quick to memorise. "
+                          + "Knitted in the round in two colours; lovely for hats, cowls and mittens.";
+            c.notes = "Every round is knitted, so every round is read from right to left.\n"
+                    + "The longest float is only 3 stitches, so this is a good first stranded pattern.\n"
+                    + "Strong contrast shows the teeth best: try charcoal and cream, or black and white.";
+            return c;
+        }
+
+        static Chart horseshoeLace() {
+            Chart c = build("Horseshoe Lace", false, false, new String[] {
+                    "..........",   // row 8 (WS): purl
+                    "....O^O...",   // row 7 (RS)
+                    "-.........",   // row 6 (WS): k1, p9
+                    "-..O.^.O..",   // row 5 (RS)
+                    "-.........",   // row 4 (WS): k1, p9
+                    "-.O..^..O.",   // row 3 (RS)
+                    "..........",   // row 2 (WS): purl
+                    ".O...^...O",   // row 1 (RS)
+            }, null);
+            c.description = "A traditional Shetland lace of rounded arches, like rows of horseshoes. "
+                          + "Each arch narrows to a central double decrease. A favourite for shawls and stoles.";
+            c.notes = "Every right-side row is balanced: two yarn overs replace the two stitches lost to the SK2P, "
+                    + "so the stitch count never changes.\n"
+                    + "For a symmetrical edge, cast on a multiple of 10 plus 1, and work the extra stitch at the end of each row "
+                    + "like the left-hand square of the chart (the column with the purl bumps).\n"
+                    + "Use a smooth yarn and block firmly to open the arches.";
+            return c;
+        }
+
         static Chart featherAndFan() {
             Chart c = build("Feather and Fan Lace", false, false, new String[] {
                     "------------------",   // row 4 (WS): knit, shown as purl bumps from the right side
@@ -299,12 +356,100 @@ public class KnittingPattern {
             return c;
         }
 
+        static Chart honeycombCable() {
+            Chart c = build("Honeycomb Cable", false, false, new String[] {
+                    "........",   // row 8 (WS): purl
+                    "........",   // row 7 (RS): knit
+                    "........",   // row 6 (WS): purl
+                    "BBBBFFFF",   // row 5 (RS): C4F, C4B
+                    "........",   // row 4 (WS): purl
+                    "........",   // row 3 (RS): knit
+                    "........",   // row 2 (WS): purl
+                    "FFFFBBBB",   // row 1 (RS): C4B, C4F
+            }, null);
+            c.description = "An all-over cable texture of interlocking cells, like a honeycomb. "
+                          + "Rich and warm for cushions, blankets and aran jumpers.";
+            c.notes = "Work the cables in the order shown, reading right to left: C4B then C4F on row 1, C4F then C4B on row 5.\n"
+                    + "Honeycomb pulls in a lot. Cast on noticeably more stitches than for plain knitting, "
+                    + "and always knit a swatch.";
+            return c;
+        }
+
+        static Chart bobbleDiamond() {
+            Chart c = build("Bobble Diamond", false, true, new String[] {
+                    "----..-..----",   // row 8 (WS)
+                    "--QQQQ-PPPP--",   // row 7 (RS): the strands meet
+                    "--..-----..--",   // row 6 (WS)
+                    "QQQQ-----PPPP",   // row 5 (RS): the strands turn back
+                    "..---------..",   // row 4 (WS)
+                    "PPPP--@--QQQQ",   // row 3 (RS): the bobble, at the widest point
+                    "--..-----..--",   // row 2 (WS)
+                    "--PPPP-QQQQ--",   // row 1 (RS): the strands part
+            }, null);
+            c.description = "Two strands of knit stitches travel apart and back again over a purl background, "
+                          + "making a chain of diamonds with a bobble in the middle of each. A classic aran panel.";
+            c.notes = "This is a panel: work its 13 stitches wherever you want it, with a stitch marker each side.\n"
+                    + "On wrong-side rows, knit the knits and purl the purls as they face you.\n"
+                    + "T4F moves the knit stitches to the left and T4B moves them to the right. "
+                    + "Work bobbles firmly so they pop out on the right side.";
+            return c;
+        }
+
+        static Chart miniCableRib() {
+            Chart c = build("Mini Cable Rib", false, false, new String[] { "-..-", "-..-", "-..-", "-CC-" }, null);
+            c.description = "A rib with a tiny 2-stitch cable twisting up each knit column. "
+                          + "All the stretch of ribbing, with more texture. Lovely for socks, hats and cuffs.";
+            c.notes = "C2F crosses just two stitches, so you can work it without a cable needle: reach behind the first stitch "
+                    + "and knit the second one through the back loop, then knit the first stitch, and slip both off together.\n"
+                    + "For a cuff, cast on a multiple of 4 and work in rib from the start.";
+            return c;
+        }
+
+        static Chart twistedRib() {
+            Chart c = build("Twisted Rib", false, false, new String[] { "-T", "-T" }, null);
+            c.description = "A 1×1 rib with every knit stitch twisted. Crisp, neat columns that hold their shape. "
+                          + "A favourite for sock cuffs and traditional ganseys.";
+            c.notes = "Twisting the stitches makes the rib firmer and less stretchy than plain 1×1 rib.\n"
+                    + "On wrong-side rows the twisted stitches are purled through the back loop (p1tbl).";
+            return c;
+        }
+
+        static Chart heelStitch() {
+            Chart c = build("Heel Stitch", false, false, new String[] { "..", ".V" }, null);
+            c.description = "Slipped stitches make a thick, ribbed fabric that wears well. "
+                          + "Traditionally used for sock heels, but just as good for a hard-wearing bag or a cosy mug cosy.";
+            c.notes = "Slip the stitches purlwise with the yarn at the back, so the strand lies on the wrong side.\n"
+                    + "Slipped stitches pull the fabric up, so heel stitch is shorter and denser than stocking stitch.\n"
+                    + "For a sock heel, work it back and forth over half the stitches.";
+            return c;
+        }
+
+        static Chart garterStitch() {
+            Chart c = build("Garter Stitch", false, false, new String[] { "--", ".." }, null);
+            c.description = "The first stitch everyone learns: knit every row. A squishy, ridged fabric that lies flat "
+                          + "and looks the same on both sides.";
+            c.notes = "Knit every row. The chart shows the wrong-side rows as purl bumps because that's how they look from the right side.\n"
+                    + "Each ridge is two rows, so count ridges instead of rows to keep track.\n"
+                    + "Garter stitch is wider and shorter than stocking stitch at the same gauge, so swatch it in garter.";
+            return c;
+        }
+
         static Chart rib2x2() {
             Chart c = build("2×2 Rib", false, false, new String[] { "--..", "--.." }, null);
             c.description = "Classic, stretchy ribbing. Ideal for cuffs, collars and hat brims.";
             c.notes = "Knit the knits and purl the purls as they face you.\n"
                     + "Use a needle about half a size to one size smaller than for the main fabric.\n"
                     + "For a scarf with matching edges, cast on a multiple of 4 plus 2 and finish every row with k2.";
+            return c;
+        }
+
+        static Chart basketweave() {
+            String a = "----....", b = "....----";
+            Chart c = build("Basketweave", false, false, new String[] { b, b, b, b, a, a, a, a }, null);
+            c.description = "Alternating blocks of knit and purl that look like a woven basket. "
+                          + "It lies flat, looks good on both sides, and is very satisfying to knit. Great for dishcloths, blankets and bags.";
+            c.notes = "Knit the knits and purl the purls as they face you. After four rows, swap the blocks over.\n"
+                    + "For a scarf with matching edges, cast on a multiple of 8 plus 4, and finish each row by working the first 4 stitches of the chart again.";
             return c;
         }
 
@@ -365,6 +510,35 @@ public class KnittingPattern {
                     toks.add(new Tok(ab, yarn, 1));
             }
             return toks;
+        }
+
+        /** One stitch to work: its leftmost square, how many squares it covers, and what to do. */
+        record Step(int col, int span, String text) { }
+
+        /**
+         * The stitches of a chart row, one per step, in the order the knitter works them.
+         * A cable is a single step covering all its squares; "no stitch" squares are skipped.
+         */
+        static List<Step> steps(Chart c, int r) {
+            boolean rs = c.isRS(r);
+            int w = c.width();
+            List<Step> out = new ArrayList<>();
+            for (int i = 0; i < w; i++) {
+                int col = rs ? w - 1 - i : i;
+                Stitch s = c.cells[r][col];
+                if (s == Stitch.NO_STITCH) continue;
+                String ab = rs || s.ws == null ? s.rs : s.ws;
+                String yarn = c.isColourwork() ? " " + c.yarn(r, col).letter() : "";
+                if (!s.isCable()) { out.add(new Step(col, 1, ab + yarn)); continue; }
+                int a = col;
+                while (a > 0 && c.cells[r][a - 1] == s) a--;
+                int b = col;
+                while (b + 1 < w && c.cells[r][b + 1] == s) b++;
+                int start = a + ((col - a) / s.width) * s.width, span = Math.min(s.width, b + 1 - start);
+                out.add(new Step(start, span, ab + yarn));
+                i += span - 1;
+            }
+            return out;
         }
 
         /** Groups repeated sequences: [yo, k1, yo, k1, ...] becomes "(yo, k1) 6 times". */
@@ -581,6 +755,7 @@ public class KnittingPattern {
             double f = 1.0;
             if (c.hasCables()) f *= 1.25;
             if (c.uses(Stitch.YO)) f *= 0.95;
+            if (c.uses(Stitch.BOBBLE)) f *= 1.08;
             if (c.isColourwork()) f *= 1.5;
             return f;
         }
@@ -747,7 +922,8 @@ public class KnittingPattern {
                 case PURL: return a(CYAN, ch);
                 case YO: return a(GREEN, ch);
                 case K2TOG: case SSK: case SK2P: return a(RED, ch);
-                case M1L: case M1R: return a(MAGENTA, ch);
+                case M1L: case M1R: case BOBBLE: return a(MAGENTA, ch);
+                case SL1: case K1TBL: return a(BOLD, ch);
                 case NO_STITCH: return a(DIM, ch);
                 case KNIT: return ch;
                 default: return a(YELLOW, ch);
@@ -860,6 +1036,7 @@ public class KnittingPattern {
         static final Color REPEAT    = new Color(0xC0392B);
         static final Color HILITE    = new Color(255, 205, 40, 90);
         static final Color HILITE_EDGE = new Color(0xE0A800);
+        static final Color STITCH_HILITE = new Color(255, 160, 0, 110);
         static final Color ACCENT    = new Color(0x7A3E2E);
 
         static Color inkFor(Color fill) {
@@ -895,6 +1072,20 @@ public class KnittingPattern {
                     g.draw(path);
                     g.draw(new Line2D.Double(x + cs / 2, y + p, x + cs / 2, y + cs - p));
                 }
+                case SL1 -> {   // a V: the slipped stitch is stretched up through the row
+                    Path2D v = new Path2D.Double();
+                    v.moveTo(x + p, y + p); v.lineTo(x + cs / 2, y + cs - p); v.lineTo(x + cs - p, y + p);
+                    g.draw(v);
+                }
+                case K1TBL -> {  // a little loop with crossed legs: a twisted stitch
+                    double t = cs * 0.30, b = cs - p;
+                    g.draw(new Line2D.Double(x + cs * 0.30, y + b, x + cs * 0.64, y + cs * 0.42));
+                    g.draw(new Line2D.Double(x + cs * 0.70, y + b, x + cs * 0.36, y + cs * 0.42));
+                    g.draw(new Arc2D.Double(x + cs * 0.34, y + p, cs * 0.32, t + cs * 0.06, 0, 180, Arc2D.OPEN));
+                    g.draw(new Line2D.Double(x + cs * 0.34, y + p + (t + cs * 0.06) / 2, x + cs * 0.36, y + cs * 0.42));
+                    g.draw(new Line2D.Double(x + cs * 0.66, y + p + (t + cs * 0.06) / 2, x + cs * 0.64, y + cs * 0.42));
+                }
+                case BOBBLE -> g.fill(star(x + cs / 2, y + cs / 2, cs * 0.36, cs * 0.16));
                 case M1L, M1R -> {
                     String t = s == Stitch.M1L ? "ML" : "MR";
                     g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, (int) Math.max(7, cs * 0.4)));
@@ -955,6 +1146,24 @@ public class KnittingPattern {
                     petal(g, cx, base, len * 0.88, wid, -38, shade, edge, line);
                     petal(g, cx, base, len * 0.88, wid, 38, shade, edge, line);
                     petal(g, cx, base, len, wid, 0, body, edge, line);
+                }
+                case SL1 -> {     // a slipped stitch is pulled up long and thin
+                    petal(g, cx, y + cs * 0.97, cs * 0.92, wid * 0.72, -11, body, edge, line);
+                    petal(g, cx, y + cs * 0.97, cs * 0.92, wid * 0.72, 11, body, edge, line);
+                }
+                case K1TBL -> {   // a twisted stitch: its legs cross at the bottom
+                    double off = cs * 0.07;
+                    petal(g, cx + off, base, len * 0.92, wid, -22, body, edge, line);
+                    petal(g, cx - off, base, len * 0.92, wid, 22, body, edge, line);
+                }
+                case BOBBLE -> {  // a round knob standing proud of the fabric
+                    double d = cs * 0.78;
+                    Ellipse2D ball = new Ellipse2D.Double(cx - d / 2, y + cs / 2 - d / 2, d, d);
+                    g.setColor(shade); g.fill(ball);
+                    g.setColor(body); g.fill(new Ellipse2D.Double(cx - d * 0.42, y + cs / 2 - d * 0.44, d * 0.72, d * 0.72));
+                    g.setColor(mix(fill, Color.WHITE, 0.55));
+                    g.fill(new Ellipse2D.Double(cx - d * 0.26, y + cs / 2 - d * 0.30, d * 0.24, d * 0.18));
+                    g.setColor(edge); g.setStroke(new BasicStroke(line)); g.draw(ball);
                 }
                 case M1L, M1R -> { // a twisted stitch: its legs cross at the bottom
                     double lean = s == Stitch.M1L ? -10 : 10, off = cs * 0.07;
@@ -1034,7 +1243,7 @@ public class KnittingPattern {
                         while (col + run < w && c.cells[r][col + run] == s) run++;
                         for (int u = 0; u < run / s.width; u++) {
                             int dc = start + col + u * s.width;
-                            if (dc < cols) cable(g, x + dc * cs, sy, s.width * cs, ch, s.frontCross(), c.fill(r, col), swatch);
+                            if (dc < cols) cable(g, x + dc * cs, sy, s.width * cs, ch, s, c.fill(r, col), swatch);
                         }
                         col += run;
                     }
@@ -1069,13 +1278,26 @@ public class KnittingPattern {
             };
         }
 
+        /** A five-pointed star centred on (cx, cy). */
+        static Shape star(double cx, double cy, double outer, double inner) {
+            Path2D p = new Path2D.Double();
+            for (int i = 0; i < 10; i++) {
+                double r = i % 2 == 0 ? outer : inner, a = -Math.PI / 2 + i * Math.PI / 5;
+                if (i == 0) p.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+                else p.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+            }
+            p.closePath();
+            return p;
+        }
+
         /** Draws a cable crossing filling the rectangle (x, y, w, h). */
-        static void cable(Graphics2D g, double x, double y, double w, double h, boolean front, Color fill) {
-            cable(g, x, y, w, h, front, fill, false);
+        /** Draws the crossing for a cable or travelling stitch. */
+        static void cable(Graphics2D g, double x, double y, double w, double h, Stitch s, Color fill, boolean soft) {
+            cable(g, x, y, w, h, s.frontCross(), s.travels(), fill, soft);
         }
 
         /** With {@code soft} set, only the strands are drawn, in gentler tones, for small fabric swatches. */
-        static void cable(Graphics2D g, double x, double y, double w, double h, boolean front, Color fill, boolean soft) {
+        static void cable(Graphics2D g, double x, double y, double w, double h, boolean front, boolean travel, Color fill, boolean soft) {
             Color ink = soft ? mix(fill, inkFor(fill), 0.45) : inkFor(fill);
             Rectangle2D box = new Rectangle2D.Double(x, y, w, h);
             if (!soft) {
@@ -1096,8 +1318,17 @@ public class KnittingPattern {
             g.clip(box);
             BasicStroke outer = new BasicStroke((float) (band + 2 * edge), BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND),
                         inner = new BasicStroke((float) band, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND);
-            g.setStroke(outer); g.setColor(ink);                   g.draw(back);
-            g.setStroke(inner); g.setColor(mix(fill, ink, 0.35));  g.draw(back);
+            if (travel) {
+                // The stitches behind are purls: show purl dots where they start and finish, instead of a strand.
+                double d = Math.max(2, Math.min(h, w / 2) * 0.26);
+                double bx = front ? x + q : x + 3 * q, ex = front ? x + 3 * q : x + q;
+                g.setColor(soft ? mix(fill, ink, 0.6) : ink);
+                g.fill(new Ellipse2D.Double(bx - d / 2, y + h * 0.78 - d / 2, d, d));
+                g.fill(new Ellipse2D.Double(ex - d / 2, y + h * 0.22 - d / 2, d, d));
+            } else {
+                g.setStroke(outer); g.setColor(ink);                   g.draw(back);
+                g.setStroke(inner); g.setColor(mix(fill, ink, 0.35));  g.draw(back);
+            }
             g.setStroke(outer); g.setColor(ink);                   g.draw(top);
             g.setStroke(inner); g.setColor(fill);                  g.draw(top);
             g.setClip(oldClip);
@@ -1116,7 +1347,7 @@ public class KnittingPattern {
             Graphics2D g = img.createGraphics();
             smooth(g);
             g.scale(scale, scale);
-            if (s.isCable()) cable(g, 0.5, 0.5, w - 1, cell - 1, s.frontCross(), PAPER);
+            if (s.isCable()) cable(g, 0.5, 0.5, w - 1, cell - 1, s, PAPER, false);
             else {
                 g.setColor(s == Stitch.NO_STITCH ? NO_ST : PAPER);
                 g.fill(new Rectangle2D.Double(0, 0, w, cell));
@@ -1177,7 +1408,10 @@ public class KnittingPattern {
             return new int[] { rows() - 1 - fromTop, dc };
         }
 
-        void paint(Graphics2D g, int highlightRow) {
+        void paint(Graphics2D g, int highlightRow) { paint(g, highlightRow, null); }
+
+        /** {@code stitch} is {leftmost column, squares covered} of the stitch to pick out in the highlighted row, or null. */
+        void paint(Graphics2D g, int highlightRow, int[] stitch) {
             Renderer.smooth(g);
             int w = c.width(), h = c.height(), cols = cols(), rows = rows();
 
@@ -1213,7 +1447,7 @@ public class KnittingPattern {
                         int run = 1;
                         while (col + run < w && c.cells[r][col + run] == s) run++;
                         for (int u = 0; u < run / s.width; u++)
-                            Renderer.cable(g, cellX(a * w + col + u * s.width), cellY(dr), s.width * cs, cs, s.frontCross(), c.fill(r, col));
+                            Renderer.cable(g, cellX(a * w + col + u * s.width), cellY(dr), s.width * cs, cs, s, c.fill(r, col), false);
                         col += run;
                     }
                 }
@@ -1223,6 +1457,19 @@ public class KnittingPattern {
                 g.setColor(Renderer.HILITE_EDGE);
                 g.setStroke(new BasicStroke(2f));
                 for (int dr = 0; dr < rows; dr++) if (dr % h == highlightRow) g.drawRect(left, cellY(dr), cols * cs, cs);
+                if (stitch != null) {
+                    for (int dr = 0; dr < rows; dr++) {
+                        if (dr % h != highlightRow) continue;
+                        for (int a = 0; a < across; a++) {
+                            int sx = cellX(a * w + stitch[0]), sy = cellY(dr), sw = stitch[1] * cs;
+                            g.setColor(Renderer.STITCH_HILITE);
+                            g.fillRect(sx, sy, sw, cs);
+                            g.setColor(Renderer.ACCENT);
+                            g.setStroke(new BasicStroke(3f));
+                            g.drawRect(sx - 1, sy - 1, sw + 2, cs + 2);
+                        }
+                    }
+                }
             }
 
             g.setColor(Renderer.INK);
@@ -1452,6 +1699,7 @@ public class KnittingPattern {
     static final class ChartPanel extends JPanel {
         Chart chart;
         int across = 2, up = 1, cs = 24, highlight = -1;
+        int[] highlightStitch;   // {leftmost column, squares} in the highlighted row, or null
         boolean editing, pictures = true;
         BiConsumer<int[], Boolean> painter;   // {chartRow, chartCol}, true when a new stroke starts
         private int[] lastCell;
@@ -1499,7 +1747,7 @@ public class KnittingPattern {
             super.paintComponent(g0);
             if (chart == null) return;
             Graphics2D g = (Graphics2D) g0.create();
-            view().paint(g, highlight);
+            view().paint(g, highlight, highlightStitch);
             g.dispose();
         }
 
@@ -1687,12 +1935,19 @@ public class KnittingPattern {
     static final class TrackerPanel extends JPanel {
         static final Preferences PREFS = prefsNode();
         static final String KEEP_AWAKE_PREF = "~keep-screen-awake";
-        final IntConsumer highlighter;
+        final BiConsumer<Integer, int[]> highlighter;   // chart row, and {column, squares} of the current stitch
         Chart chart;
         int row = 1;   // the row you are about to work, counted from the cast-on (1-based)
+        int step;      // the stitch you are about to work in this row (0-based, within the chart repeat)
+        int across = 1; // which repeat across the row you are in (1-based)
         boolean inUse;  // the tracker tab is showing and the window isn't minimised
+        /** Rows planned in the Size & yarn tab, and how many repeats fit across the planned width. */
+        IntSupplier plannedRows = () -> 0;
+        ToIntFunction<Chart> repeatsAcross = c -> 1;
 
-        final JLabel big = new JLabel(), sub = new JLabel(), nextLabel = new JLabel(), awakeLabel = new JLabel();
+        final JLabel big = new JLabel(), sub = new JLabel(), nextLabel = new JLabel(), awakeLabel = new JLabel(),
+                     stitchLabel = new JLabel(" ", SwingConstants.CENTER), acrossLabel = new JLabel(" ", SwingConstants.CENTER);
+        final JProgressBar progress = new JProgressBar();
         final JTextArea text = new JTextArea();
         final JCheckBox awakeBox = new JCheckBox("Keep the screen awake while I'm using the tracker",
                 PREFS == null || PREFS.getBoolean(KEEP_AWAKE_PREF, true));
@@ -1704,7 +1959,7 @@ public class KnittingPattern {
             catch (SecurityException e) { return null; }
         }
 
-        TrackerPanel(IntConsumer highlighter) {
+        TrackerPanel(BiConsumer<Integer, int[]> highlighter) {
             super(new BorderLayout());
             this.highlighter = highlighter;
             setBorder(new EmptyBorder(16, 16, 16, 16));
@@ -1718,15 +1973,39 @@ public class KnittingPattern {
             text.setLineWrap(true);
             text.setWrapStyleWord(true);
             text.setEditable(false);
+            text.setFocusable(false);   // so the arrow keys move through the stitches
             text.setBackground(Renderer.PAPER);
             text.setBorder(new EmptyBorder(14, 0, 14, 0));
             nextLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
             nextLabel.setForeground(new Color(0x6E6660));
 
-            JPanel head = new JPanel(new GridLayout(0, 1));
+            progress.setStringPainted(true);
+            progress.setForeground(Renderer.ACCENT);
+            progress.setToolTipText("How far you are through the length planned in the Size & yarn tab.");
+            JPanel head = new JPanel(new GridLayout(0, 1, 0, 4));
             head.setOpaque(false);
             head.add(big);
             head.add(sub);
+            head.add(progress);
+
+            // Stitch by stitch
+            JButton prevSt = new JButton("◀  Back a stitch"), nextSt = new JButton("Next stitch  ▶");
+            prevSt.addActionListener(e -> moveStitch(-1));
+            nextSt.addActionListener(e -> moveStitch(1));
+            stitchLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+            stitchLabel.setForeground(Renderer.INK);
+            acrossLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+            acrossLabel.setForeground(new Color(0x6E6660));
+            JPanel stitchText = new JPanel(new GridLayout(0, 1));
+            stitchText.setOpaque(false);
+            stitchText.add(stitchLabel);
+            stitchText.add(acrossLabel);
+            JPanel stitchBar = new JPanel(new BorderLayout(8, 0));
+            stitchBar.setOpaque(false);
+            stitchBar.setBorder(new EmptyBorder(8, 0, 0, 0));
+            stitchBar.add(prevSt, BorderLayout.WEST);
+            stitchBar.add(stitchText, BorderLayout.CENTER);
+            stitchBar.add(nextSt, BorderLayout.EAST);
 
             JButton prev = new JButton("◀  Back a row"), next = new JButton("Done — next row  ▶"),
                     reset = new JButton("Start again"), go = new JButton("Go to row…");
@@ -1745,15 +2024,18 @@ public class KnittingPattern {
             JPanel buttons = new JPanel(new GridLayout(2, 2, 8, 8));
             buttons.setOpaque(false);
             buttons.add(prev); buttons.add(next); buttons.add(go); buttons.add(reset);
+            // Buttons don't take the keyboard focus, so Space and the arrow keys always reach the tracker.
+            for (JButton b : new JButton[] { prev, next, go, reset, prevSt, nextSt }) b.setFocusable(false);
 
             JLabel tip = new JLabel("<html>Your place is saved automatically for each pattern. "
-                    + "Keep this tab open and the chart highlights the row you're on.</html>");
+                    + "Keep this tab open and the chart highlights the row and stitch you're on.<br>"
+                    + "<b>Keys:</b> → or Space next stitch, ← back a stitch, ↑ next row, ↓ back a row.</html>");
             tip.setForeground(new Color(0x6E6660));
 
             awakeBox.setOpaque(false);
             awakeBox.setFocusable(false);
             awakeBox.setToolTipText("Stops the screensaver and screen sleep while this tab is open. "
-                    + "The screen may sleep again " + KeepAwake.IDLE_LIMIT_MINUTES + " minutes after your last row change.");
+                    + "The screen may sleep again " + KeepAwake.IDLE_LIMIT_MINUTES + " minutes after you last move on a row or stitch.");
             awakeBox.addActionListener(e -> {
                 if (PREFS != null) PREFS.putBoolean(KEEP_AWAKE_PREF, awakeBox.isSelected());
                 applyAwake();
@@ -1767,18 +2049,40 @@ public class KnittingPattern {
             foot.add(awakeLabel);
             foot.add(tip);
 
+            JPanel upper = new JPanel(new BorderLayout(0, 12));
+            upper.setOpaque(false);
+            upper.add(stitchBar, BorderLayout.NORTH);
+            upper.add(nextLabel, BorderLayout.SOUTH);
             JPanel south = new JPanel(new BorderLayout(0, 12));
             south.setOpaque(false);
-            south.add(nextLabel, BorderLayout.NORTH);
+            south.add(upper, BorderLayout.NORTH);
             south.add(buttons, BorderLayout.CENTER);
             south.add(foot, BorderLayout.SOUTH);
             updateAwakeLabel();
+
+            setFocusable(true);
+            addMouseListener(new MouseAdapter() {
+                @Override public void mousePressed(MouseEvent e) { requestFocusInWindow(); }
+            });
+            InputMap im = getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+            ActionMap am = getActionMap();
+            bind(im, am, "nextStitch", () -> moveStitch(1), KeyEvent.VK_RIGHT, KeyEvent.VK_SPACE);
+            bind(im, am, "prevStitch", () -> moveStitch(-1), KeyEvent.VK_LEFT, KeyEvent.VK_BACK_SPACE);
+            bind(im, am, "nextRow", () -> move(1), KeyEvent.VK_UP);
+            bind(im, am, "prevRow", () -> move(-1), KeyEvent.VK_DOWN);
 
             add(head, BorderLayout.NORTH);
             JScrollPane sp = new JScrollPane(text);
             sp.setBorder(new MatteBorder(1, 0, 1, 0, new Color(0xE6DED4)));
             add(sp, BorderLayout.CENTER);
             add(south, BorderLayout.SOUTH);
+        }
+
+        static void bind(InputMap im, ActionMap am, String name, Runnable action, int... keys) {
+            for (int k : keys) im.put(KeyStroke.getKeyStroke(k, 0), name);
+            am.put(name, new AbstractAction() {
+                @Override public void actionPerformed(ActionEvent e) { action.run(); }
+            });
         }
 
         String key() {
@@ -1789,6 +2093,8 @@ public class KnittingPattern {
         void setChart(Chart c) {
             chart = c;
             row = PREFS == null ? 1 : Math.max(1, PREFS.getInt(key(), 1));
+            step = 0;
+            across = 1;
             refresh();
             applyAwake();
         }
@@ -1797,6 +2103,8 @@ public class KnittingPattern {
 
         void setRow(int r) {
             row = r;
+            step = 0;
+            across = 1;
             if (PREFS != null) PREFS.putInt(key(), row);
             refresh();
             applyAwake();   // every row change restarts the time limit
@@ -1822,10 +2130,10 @@ public class KnittingPattern {
                 awakeLabel.setText("Your screensaver and screen sleep work as normal.");
             } else if (awake.isActive()) {
                 awakeLabel.setText("Screen kept awake until " + KeepAwake.IDLE_LIMIT_MINUTES
-                        + " minutes after your last row change.");
+                        + " minutes after you last move on a row or stitch.");
             } else if (awake.isExpired()) {
-                awakeLabel.setText("No row change for " + KeepAwake.IDLE_LIMIT_MINUTES
-                        + " minutes, so the screen may sleep. Press a row button to wake it.");
+                awakeLabel.setText("No movement for " + KeepAwake.IDLE_LIMIT_MINUTES
+                        + " minutes, so the screen may sleep. Move on a row or stitch to wake it.");
             } else {
                 awakeLabel.setText("The screen is kept awake while this tab is open.");
             }
@@ -1833,18 +2141,83 @@ public class KnittingPattern {
 
         int chartRow() { return chart == null ? -1 : (row - 1) % chart.height(); }
 
+        int acrossTotal() { return chart == null || chart.panel ? 1 : Math.max(1, repeatsAcross.applyAsInt(chart)); }
+
+        /**
+         * Moves one stitch forwards or backwards. After the last stitch of the repeat it starts the
+         * next repeat across; after the last repeat across it moves on to the next row.
+         */
+        void moveStitch(int d) {
+            if (chart == null) return;
+            List<Instructions.Step> steps = Instructions.steps(chart, chartRow());
+            if (steps.isEmpty()) { move(d); return; }
+            step += d;
+            if (step >= steps.size()) {
+                step = 0;
+                if (++across > acrossTotal()) { move(1); return; }
+            } else if (step < 0) {
+                if (--across < 1) {
+                    if (row == 1) { step = 0; across = 1; refresh(); return; }
+                    setRow(row - 1);
+                    across = acrossTotal();
+                    step = Math.max(0, Instructions.steps(chart, chartRow()).size() - 1);
+                } else step = steps.size() - 1;
+            }
+            refresh();
+            applyAwake();   // stepping through stitches also counts as using the tracker
+        }
+
+        /** The stitch you're on, as {leftmost column, squares covered}, or null. */
+        int[] currentStitch() {
+            if (chart == null) return null;
+            List<Instructions.Step> steps = Instructions.steps(chart, chartRow());
+            if (steps.isEmpty()) return null;
+            Instructions.Step st = steps.get(Math.min(step, steps.size() - 1));
+            return new int[] { st.col(), st.span() };
+        }
+
         void refresh() {
             if (chart == null) return;
             int h = chart.height(), r = chartRow(), repeat = (row - 1) / h + 1;
+            int planned = Math.max(0, plannedRows.getAsInt());
             boolean rs = chart.inTheRound || (row - 1) % 2 == 0;
             String side = chart.inTheRound ? "" : rs ? "  ·  right side" : "  ·  wrong side";
+            String rw = chart.rowWord().toLowerCase(), rws = chart.rowsWord();
             big.setText(chart.rowWord() + " " + row + side);
-            sub.setText("Chart " + chart.rowWord().toLowerCase() + " " + (r + 1) + " of " + h + "  ·  repeat " + repeat);
+            int plannedRepeats = (planned + h - 1) / h;
+            sub.setText("Chart " + rw + " " + (r + 1) + " of " + h + "  ·  repeat " + repeat
+                    + (planned > 0 && repeat <= plannedRepeats ? " of " + plannedRepeats : ""));
+
+            progress.setVisible(planned > 0);
+            if (planned > 0) {
+                progress.setMaximum(planned);
+                progress.setValue(Math.min(planned, row - 1));
+                int left = planned - row;
+                progress.setString(row > planned
+                        ? "All " + planned + " " + rws + " planned in Size & yarn are done"
+                        : left == 0 ? "Last " + rw + " of the " + planned + " planned"
+                        : left + " " + (left == 1 ? rw : rws) + " to go after this one (" + planned + " planned)");
+            }
+
             text.setText(Instructions.body(chart, r));
             text.setCaretPosition(0);
             int nr = row % h;
             nextLabel.setText("<html><b>Up next:</b> " + Html.esc(Instructions.body(chart, nr)) + "</html>");
-            highlighter.accept(r);
+
+            List<Instructions.Step> steps = Instructions.steps(chart, r);
+            int total = acrossTotal();
+            if (across > total) across = total;
+            if (steps.isEmpty()) {
+                stitchLabel.setText("No stitches in this " + rw);
+                acrossLabel.setText(" ");
+            } else {
+                step = Math.min(step, steps.size() - 1);
+                stitchLabel.setText("Stitch " + (step + 1) + " of " + steps.size() + ":  " + steps.get(step).text());
+                acrossLabel.setText(chart.panel ? "in the panel"
+                        : total > 1 ? "repeat " + across + " of " + total + " across the " + rw
+                        : "in the repeat");
+            }
+            highlighter.accept(r, currentStitch());
         }
     }
 
@@ -1871,6 +2244,20 @@ public class KnittingPattern {
         final JEditorPane out = htmlPane();
         Chart chart;
         boolean inches, updating;
+        Runnable onChange = () -> { };
+
+        double rowsPerUnit() { return val(gaugeRows) / (inches ? 4.0 : 10.0); }
+        double stsPerUnit()  { return val(gaugeSts) / (inches ? 4.0 : 10.0); }
+
+        /** Rows (or rounds) needed for the length wanted. */
+        int plannedRows() { return Math.max(1, (int) Math.round(val(length) * rowsPerUnit())); }
+
+        /** Repeats of the chart across the cast-on for the width wanted. */
+        int repeatsAcross(Chart c) {
+            if (c == null || c.panel) return 1;
+            int e = (int) val(edges);
+            return Math.max(1, (Estimate.castOn(c, val(width), stsPerUnit(), e) - e) / c.width());
+        }
 
         static JSpinner dbl(double v, double min, double max, double step) {
             JSpinner s = new JSpinner(new SpinnerNumberModel(v, min, max, step));
@@ -1950,8 +2337,7 @@ public class KnittingPattern {
 
         void recompute() {
             if (chart == null || updating) return;
-            double per = inches ? 4.0 : 10.0;
-            double stsPerUnit = val(gaugeSts) / per, rowsPerUnit = val(gaugeRows) / per;
+            double stsPerUnit = stsPerUnit(), rowsPerUnit = rowsPerUnit();
             String u = inches ? "in" : "cm", len = inches ? "yd" : "m", rw = chart.rowsWord();
             int w = chart.width(), h = chart.height(), e = (int) val(edges);
             StringBuilder s = new StringBuilder("<html><head><style>" + Html.SWING_CSS + "</style></head><body>");
@@ -1972,7 +2358,7 @@ public class KnittingPattern {
                  .append("</b> wide (you asked for ").append(fmt(val(width))).append(' ').append(u).append(").</p>");
             }
 
-            int rows = Math.max(1, (int) Math.round(val(length) * rowsPerUnit));
+            int rows = plannedRows();
             int full = rows / h, extra = rows % h;
             s.append("<h2>Length</h2><p>Work about <b>").append(rows).append(' ').append(rw).append("</b>");
             if (extra == 0) s.append(", which is exactly ").append(full).append(full == 1 ? " repeat" : " repeats").append(" of the chart.</p>");
@@ -2007,6 +2393,7 @@ public class KnittingPattern {
              .append("Cables and colourwork use more yarn and are allowed for. Always knit a gauge swatch first, ")
              .append("and buy an extra ball from the same dye lot.</p>");
             setHtml(out, s.append("</body></html>").toString());
+            onChange.run();
         }
 
         static String fmt(double d) { return d >= 100 ? String.valueOf(Math.round(d)) : String.format("%.1f", d); }
@@ -2053,10 +2440,15 @@ public class KnittingPattern {
             });
             charts.forEach(model::addElement);
 
-            tracker = new TrackerPanel(r -> {
-                chartPanel.highlight = tabs.getSelectedIndex() == TRACKER_TAB ? r : -1;
+            tracker = new TrackerPanel((r, st) -> {
+                boolean on = tabs.getSelectedIndex() == TRACKER_TAB;
+                chartPanel.highlight = on ? r : -1;
+                chartPanel.highlightStitch = on ? st : null;
                 chartPanel.repaint();
             });
+            tracker.plannedRows = calculator::plannedRows;
+            tracker.repeatsAcross = calculator::repeatsAcross;
+            calculator.onChange = tracker::refresh;
 
             // Pattern list
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -2149,9 +2541,12 @@ public class KnittingPattern {
             tabs.addTab("Checks", checks);
             tabs.setPreferredSize(new Dimension(460, 600));
             tabs.addChangeListener(e -> {
-                chartPanel.highlight = tabs.getSelectedComponent() == tracker ? tracker.chartRow() : -1;
+                boolean on = tabs.getSelectedComponent() == tracker;
+                chartPanel.highlight = on ? tracker.chartRow() : -1;
+                chartPanel.highlightStitch = on ? tracker.currentStitch() : null;
                 chartPanel.repaint();
                 tracker.setInUse(trackerInUse());
+                if (on) SwingUtilities.invokeLater(tracker::requestFocusInWindow);
             });
 
             JSplitPane right = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, centre, tabs);
@@ -2367,23 +2762,28 @@ public class KnittingPattern {
 
             /** Shows the stitch buttons the same way as the chart: pictures or symbols. */
             void updateIcons(boolean pictures) {
-                stitchButtons.forEach((s, b) -> b.setIcon(new ImageIcon(Renderer.icon(s, 20, 1, pictures))));
+                stitchButtons.forEach((s, b) -> b.setIcon(new ImageIcon(Renderer.icon(s, iconSize(s), 1, pictures))));
             }
 
+            /** Cable buttons are a little shorter, so the whole row of them fits. */
+            int iconSize(Stitch s) { return s.isCable() ? 18 : 20; }
+
             EditBar() {
-                super(new GridLayout(2, 1));
-                JToolBar stitches = new JToolBar(), actions = new JToolBar();
+                super(new GridLayout(3, 1));
+                JToolBar stitches = new JToolBar(), cables = new JToolBar(), actions = new JToolBar();
                 stitches.setFloatable(false);
+                cables.setFloatable(false);
                 actions.setFloatable(false);
                 stitches.add(new JLabel(" Stitch "));
+                cables.add(new JLabel(" Cable "));
                 for (Stitch s : Stitch.values()) {
-                    JToggleButton b = new JToggleButton(new ImageIcon(Renderer.icon(s, 20, 1)));
+                    JToggleButton b = new JToggleButton(new ImageIcon(Renderer.icon(s, iconSize(s), 1)));
                     stitchButtons.put(s, b);
                     b.setToolTipText("<html><b>" + s.label + "</b><br>" + Html.esc(s.description(false)) + "</html>");
                     b.setFocusable(false);
                     b.addActionListener(e -> { tool = s; yarnTool = -1; });
                     group.add(b);
-                    stitches.add(b);
+                    (s.isCable() ? cables : stitches).add(b);
                     if (s == Stitch.KNIT) b.setSelected(true);
                 }
                 actions.add(new JLabel(" Yarn "));
@@ -2403,6 +2803,7 @@ public class KnittingPattern {
                 actions.add(resize);
                 actions.add(details);
                 add(stitches);
+                add(cables);
                 add(actions);
             }
 
