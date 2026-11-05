@@ -240,7 +240,7 @@ From the **File** menu:
 
 ## Questions
 
-**Is it really free?** Yes. It's open source under the MIT licence (see below).
+**Is it really free?** Yes. It's free to download and use for your own knitting (see *Licence* below).
 
 **Does it need the internet?** No. Everything happens on your computer.
 
@@ -266,4 +266,8 @@ From the **File** menu:
 
 ## Licence
 
-MIT. You're free to use, copy, change and share it. Happy knitting! 🧶
+Copyright Mario Gianota 2026. All rights reserved.
+
+Free to download and use for personal knitting, but not to copy, change or redistribute without permission. Feature requests, bugs and suggestions are welcome at mariogianota@protonmail.com.
+
+Happy knitting! 🧶
