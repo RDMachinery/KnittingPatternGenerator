@@ -2604,7 +2604,9 @@ public class KnittingPattern {
             JMenu help = new JMenu("Help");
             help.add(item("How to read a chart", null, this::howToRead));
             help.add(item("About", null, () -> JOptionPane.showMessageDialog(this,
-                    APP_NAME + " " + VERSION + "\nDesign, view and follow knitting charts.\nMIT licence.", "About",
+                    APP_NAME + " " + VERSION + "\nDesign, view and follow knitting charts.\nMIT licence.\n\n"
+                    + "Copyright Mario Gianota 2026. All Rights Reserved.\n"
+                    + "Feature requests, bugs and suggestions to mariogianota@protonmail.com.", "About",
                     JOptionPane.INFORMATION_MESSAGE)));
             bar.add(file); bar.add(edit); bar.add(help);
             return bar;
