@@ -1954,6 +1954,179 @@ public class KnittingPattern {
     }
 
     // =======================================================================
+    // Demo website (java KnittingPattern.java --site docs)
+    // =======================================================================
+
+    /**
+     * Builds a small website for GitHub Pages: a home page listing the built-in
+     * patterns, and a page for each with a working row tracker, so people can try
+     * the program in a browser before installing anything.
+     */
+    static final class Site {
+        static final String HOME = "https://github.com/RDMachinery/KnittingPatternGenerator";
+
+        static String slug(String name) {
+            String s = name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+            return s.isEmpty() ? "pattern" : s;
+        }
+
+        /** Typical DK yarn and a 50 × 60 cm piece, the same starting point as the Size & yarn tab. */
+        static int plannedRows()           { return (int) Math.round(60 * 30 / 10.0); }
+        static int repeatsAcross(Chart c) {
+            if (c.panel) return 1;
+            int edges = c.inTheRound ? 0 : 2;
+            return Math.max(1, (Estimate.castOn(c, 50, 2.2, edges) - edges) / c.width());
+        }
+
+        static void build(Path dir, List<Chart> charts) throws IOException {
+            Path images = dir.resolve("images");
+            Files.createDirectories(images);
+            Files.writeString(dir.resolve(".nojekyll"), "");   // serve the files exactly as they are
+
+            // Screenshots from the README, if they're next to the program.
+            boolean shot = copyIfPresent("fair-isle.png", images), phone = copyIfPresent("web-tracker.png", images);
+
+            StringBuilder cards = new StringBuilder();
+            for (Chart c : charts) {
+                String slug = slug(c.name);
+                ImageIO.write(thumbnail(c, 72, 2), "png", images.resolve(slug + ".png").toFile());
+                Files.writeString(dir.resolve(slug + ".html"), patternPage(c), StandardCharsets.UTF_8);
+                String desc = c.description.isBlank() ? "" : firstSentence(c.description);
+                cards.append("<a class='card' href='").append(slug).append(".html'><img src='images/").append(slug)
+                     .append(".png' width='72' height='72' alt=''><span><b>").append(Html.esc(c.name)).append("</b><small>")
+                     .append(Html.esc(c.summary())).append("</small>").append(Html.esc(desc)).append("</span></a>\n");
+            }
+            Files.writeString(dir.resolve("index.html"), home(cards.toString(), shot, phone), StandardCharsets.UTF_8);
+        }
+
+        static boolean copyIfPresent(String name, Path images) throws IOException {
+            Path p = Path.of(name);
+            if (!Files.isRegularFile(p)) return false;
+            Files.copy(p, images.resolve(name), StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        }
+
+        static String firstSentence(String s) {
+            int dot = s.indexOf(". ");
+            return dot < 0 ? s : s.substring(0, dot + 1);
+        }
+
+        static BufferedImage thumbnail(Chart c, int size, int scale) {
+            BufferedImage img = new BufferedImage(size * scale, size * scale, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+            g.scale(scale, scale);
+            Renderer.thumbnail(c, size).paintIcon(null, g, 0, 0);
+            g.dispose();
+            return img;
+        }
+
+        /** One pattern with its row tracker, as the program's own web-page export makes it. */
+        static String patternPage(Chart c) {
+            int across = c.panel ? 1 : Math.max(1, Math.min(6, 24 / c.width()));
+            int up = c.height() <= 2 ? 3 : c.height() <= 4 ? 2 : 1;
+            ChartView v = new ChartView(c, across, up, 22);
+            String data = Html.trackerData(c, v, plannedRows(), repeatsAcross(c));
+            String nav = "<p class='muted'><a href='index.html'>← All patterns</a> · <a href='" + HOME
+                       + "'>Get " + APP_NAME + " (free)</a></p>";
+            return Html.pattern(c, s -> Html.dataUri(Renderer.icon(s, 22, 2)), Html.dataUri(v.image(2)), true, data)
+                    .replace("<img class='chart' ", "<img class='chart' width='" + v.size().width + "' ")
+                    .replaceFirst("<body>", "<body>" + nav);
+        }
+
+        static String home(String cards, boolean shot, boolean phone) {
+            return """
+                <!DOCTYPE html>
+                <html lang="en"><head><meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>%1$s: design, view and follow knitting charts</title>
+                <meta name="description" content="Free knitting chart software: design charts, get written row-by-row instructions, and follow along stitch by stitch on your computer, phone or tablet.">
+                <style>
+                body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#2E2A27;background:#FFFDF8;line-height:1.55}
+                main{max-width:980px;margin:0 auto;padding:0 1.2rem 3rem}
+                header{background:#7A3E2E;color:#FFF8F0;padding:3rem 1.2rem 2.6rem;text-align:center}
+                header h1{margin:0;font-size:2.6rem;letter-spacing:.01em}
+                header p{margin:.6rem auto 1.4rem;font-size:1.25rem;max-width:640px;opacity:.95}
+                .btn{display:inline-block;margin:.3rem;padding:.8rem 1.3rem;border-radius:999px;font:bold 1rem sans-serif;text-decoration:none}
+                .btn.light{background:#FFF8F0;color:#7A3E2E}.btn.line{border:2px solid #FFF8F0;color:#FFF8F0}
+                h2{color:#7A3E2E;font-size:1.7rem;margin:2.6rem 0 .6rem}
+                .lead{font-size:1.15rem}
+                .shot{max-width:100%%;border:1px solid #E6DED4;border-radius:8px;box-shadow:0 6px 24px rgba(60,40,30,.12)}
+                .phone{display:flex;gap:2rem;align-items:center;flex-wrap:wrap}
+                .phone img{width:260px;max-width:70%%;border:1px solid #E6DED4;border-radius:22px;box-shadow:0 6px 24px rgba(60,40,30,.15)}
+                .phone div{flex:1;min-width:260px}
+                .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.9rem}
+                .card{display:flex;gap:.9rem;align-items:flex-start;padding:.9rem;background:#fff;border:1px solid #E6DED4;
+                  border-radius:12px;color:inherit;text-decoration:none;transition:box-shadow .15s,transform .15s}
+                .card:hover{box-shadow:0 6px 18px rgba(60,40,30,.12);transform:translateY(-2px)}
+                .card img{flex:none;border-radius:8px}
+                .card b{display:block;color:#7A3E2E;font-size:1.08rem}.card small{display:block;color:#6E6660;margin-bottom:.2rem}
+                .card span{font-size:.95rem}
+                ul.features{padding-left:1.2rem}ul.features li{margin:.35rem 0}
+                ol li{margin:.3rem 0}
+                footer{border-top:1px solid #E6DED4;margin-top:3rem;padding-top:1rem;color:#6E6660;font-size:.92rem}
+                a{color:#7A3E2E}
+                </style></head><body>
+                <header>
+                  <h1>%1$s</h1>
+                  <p>Design, view and follow knitting charts, free. Every chart comes with written row-by-row instructions,
+                  and a tracker that follows you stitch by stitch.</p>
+                  <a class="btn light" href="#patterns">Try a pattern in your browser</a>
+                  <a class="btn line" href="%2$s#getting-started">Download the program</a>
+                </header>
+                <main>
+                  <h2>Charts and instructions that always agree</h2>
+                  <p class="lead">%1$s shows a knitting chart and its written instructions side by side. Both come from the
+                  same chart, so they always agree. It works out how many stitches to cast on and roughly how much yarn
+                  to buy, and checks your own designs for mistakes before you pick up your needles.</p>
+                  %3$s
+                  <h2>Knit from your phone or tablet</h2>
+                  <div class="phone">%4$s<div>
+                    <p class="lead">Every pattern below opens with a working <b>row tracker</b>. Tap <b>Next stitch</b> and
+                    the stitch you're on lights up on the chart and in the instructions. When you finish a repeat it moves
+                    across the row, and when you finish the row it moves up to the next one.</p>
+                    <p>Your place is saved in your browser, so you can put your knitting down and pick up where you left off.
+                    On phones that allow it, the page can keep the screen on while you knit.</p>
+                    <p>In the program, <b>File → Export as web page</b> makes a page like this for any pattern, including
+                    your own designs.</p>
+                  </div></div>
+                  <h2 id="patterns">Try a pattern</h2>
+                  <p>Fifteen patterns come with the program, from garter stitch to a bobble-and-cable aran panel.
+                  Pick one to see its chart, key and instructions, and follow it with the tracker.</p>
+                  <div class="grid">
+                %5$s  </div>
+                  <h2>What the program does</h2>
+                  <ul class="features">
+                    <li><b>Charts you can read easily:</b> proper knitting symbols, or pictures of the stitches as they look in your knitting.</li>
+                    <li><b>Written instructions, made for you:</b> wrong-side rows are turned around, so you never have to work out "purl the knits" in your head.</li>
+                    <li><b>A row tracker:</b> row by row or stitch by stitch, with how many rows you have left to go.</li>
+                    <li><b>A size and yarn calculator:</b> stitches to cast on, rows to work and roughly how much yarn to buy.</li>
+                    <li><b>A chart designer</b> with lace, cables, travelling stitches, bobbles and colourwork.</li>
+                    <li><b>Mistake checks:</b> stitch counts that don't add up, cables drawn the wrong width, and floats long enough to snag.</li>
+                    <li><b>Print and share:</b> print the pattern, or save it as a web page, a picture or plain text.</li>
+                  </ul>
+                  <h2>Get the program</h2>
+                  <p>It's one file that runs on a Mac, Windows or Linux computer, using Java (which is also free).</p>
+                  <ol>
+                    <li>Install Java from <a href="https://adoptium.net">adoptium.net</a> (once).</li>
+                    <li>Download <b>KnittingPattern.java</b> from the <a href="%2$s">project page</a>.</li>
+                    <li>Start it, following the <a href="%2$s#getting-started">step-by-step instructions</a>.</li>
+                  </ol>
+                  <footer>
+                    <p>Copyright Mario Gianota 2026. All rights reserved. Free to download and use for personal knitting,
+                    but not to copy, change or redistribute without permission.</p>
+                    <p>Feature requests, bugs and suggestions: <a href="mailto:mariogianota@protonmail.com">mariogianota@protonmail.com</a></p>
+                  </footer>
+                </main>
+                </body></html>
+                """.formatted(Html.esc(APP_NAME), HOME,
+                    shot ? "<p><img class=\"shot\" src=\"images/fair-isle.png\" alt=\"The Fair Isle Diamonds pattern in "
+                           + Html.esc(APP_NAME) + "\"></p>" : "",
+                    phone ? "<img src=\"images/web-tracker.png\" alt=\"The row tracker on a phone\">" : "",
+                    cards);
+        }
+    }
+
+    // =======================================================================
     // Swing GUI
     // =======================================================================
 
@@ -3427,7 +3600,8 @@ public class KnittingPattern {
             "  java KnittingPattern.java --text                 print all patterns as text",
             "  java KnittingPattern.java --text --pattern NAME  print patterns whose name contains NAME",
             "  java KnittingPattern.java --text FILE.knit       print a saved pattern",
-            "  --no-colour                                      plain text without terminal colours"));
+            "  --no-colour                                      plain text without terminal colours",
+            "  java KnittingPattern.java --site docs            make a demo website (for GitHub Pages) in the folder docs"));
     }
 
     static boolean isTerminal() {
@@ -3439,12 +3613,13 @@ public class KnittingPattern {
 
     public static void main(String[] args) {
         boolean text = false, colour = true;
-        String patternName = null, file = null;
+        String patternName = null, file = null, site = null;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--text", "-t" -> text = true;
                 case "--no-colour", "--no-color" -> colour = false;
                 case "--pattern", "-p" -> { if (i + 1 < args.length) patternName = args[++i]; }
+                case "--site" -> { if (i + 1 < args.length) site = args[++i]; }
                 case "--help", "-h" -> { printUsage(); return; }
                 default -> file = args[i];
             }
@@ -3455,6 +3630,18 @@ public class KnittingPattern {
         if (file != null) {
             try { opened = ChartIO.load(Path.of(file)); charts.add(opened); }
             catch (IOException | IllegalArgumentException e) { System.err.println("Couldn't open " + file + ": " + e.getMessage()); }
+        }
+
+        if (site != null) {
+            try {
+                Site.build(Path.of(site), BuiltIns.all());
+                System.out.println("Website written to " + Path.of(site).toAbsolutePath()
+                        + ". Open index.html in a browser to check it, then publish the folder with GitHub Pages.");
+            } catch (IOException e) {
+                System.err.println("Couldn't write the website: " + e.getMessage());
+                System.exit(1);
+            }
+            return;
         }
 
         if (!text && GraphicsEnvironment.isHeadless()) {

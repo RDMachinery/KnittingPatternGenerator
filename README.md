@@ -8,6 +8,8 @@ Knitting Pattern Studio shows a knitting chart and its written, row-by-row instr
 
 ![The Fair Isle Diamonds pattern in Knitting Pattern Studio](fair-isle.png)
 
+**[Try it in your browser](https://rdmachinery.github.io/KnittingPatternGenerator/)**: follow any of the built-in patterns with the row tracker, on your computer, phone or tablet, without installing anything.
+
 ---
 
 ## What it does
@@ -279,6 +281,7 @@ To put it on your phone, export the web page, then email it to yourself, or save
 - Each pattern is a grid of `Stitch` values (with how many stitches each one uses and makes) plus a yarn index per square. The written instructions, key, stitch-count checks, printing and row tracker are all generated from that grid.
 - `.knit` files are plain text: a few `key: value` lines, then the chart drawn with one character per stitch (`.` knit, `-` purl, `O` yarn over, `/` k2tog, `\` ssk, `^` sk2p, `L`/`R` make one, `V` slip 1, `T` k1tbl, `@` bobble, `C`/`D` C2F/C2B, `F`/`B` C4F/C4B, `G`/`H` C6F/C6B, `X`/`Y` C8F/C8B, `P`/`Q` T4F/T4B, `#` no stitch), and an optional block of yarn letters for colourwork. You can write or edit them in any text editor.
 - The pattern-list swatches and stitch pictures are drawn as vector shapes, so they stay sharp on high-resolution (Retina) screens.
+- `java KnittingPattern.java --site docs` builds the demo website: a home page plus a tracker page for every built-in pattern, ready for GitHub Pages. Run it in the folder with the screenshots so they're included.
 - If no display is available, the program falls back to text mode automatically.
 
 ---
