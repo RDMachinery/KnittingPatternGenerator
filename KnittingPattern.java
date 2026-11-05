@@ -22,7 +22,7 @@
  *   - Each square is one stitch left on the needle after the row is worked,
  *     so a decrease (which uses 2 or 3 stitches) still takes one square.
  *
- * Licence: MIT.
+ * Copyright Mario Gianota 2026. All Rights Reserved.
  */
 
 import javax.imageio.ImageIO;
@@ -541,11 +541,33 @@ public class KnittingPattern {
             return out;
         }
 
-        /** Groups repeated sequences: [yo, k1, yo, k1, ...] becomes "(yo, k1) 6 times". */
-        static List<String> compress(List<Tok> toks) {
-            List<String> out = new ArrayList<>();
+        /**
+         * A row's written instruction, plus where each stitch of the row appears in it:
+         * {@code ranges.get(i)} is {start, end} of the words for step i (see {@link #steps}), and
+         * {@code hints.get(i)} says which of several identical stitches it is ("2 of 5"), or "".
+         */
+        record Mapped(String text, List<int[]> ranges, List<String> hints) { }
+
+        /**
+         * The full written instruction for one chart row. Repeated sequences are grouped:
+         * [yo, k1, yo, k1, ...] becomes "(yo, k1) 6 times".
+         */
+        static Mapped mapped(Chart c, int r) {
+            List<Tok> toks = tokens(c, r);
+            List<int[]> ranges = new ArrayList<>();
+            List<String> hints = new ArrayList<>();
+            if (toks.isEmpty()) return new Mapped("No stitches.", ranges, hints);
+            if (toks.size() == 1 && toks.get(0).countable()) {
+                Tok t = toks.get(0);
+                String verb = t.ab().equals("k") ? "Knit" : "Purl";
+                String text = t.yarn().isEmpty() ? verb + "." : verb + " every stitch with yarn " + t.yarn() + ".";
+                for (int i = 0; i < t.count(); i++) { ranges.add(new int[] { 0, text.length() - 1 }); hints.add(""); }
+                return new Mapped(text, ranges, hints);
+            }
+            StringBuilder sb = new StringBuilder(c.panel ? "" : "*");
             int i = 0;
             while (i < toks.size()) {
+                if (i > 0) sb.append(", ");
                 int bestP = 0, bestK = 1;
                 for (int p = 2; p <= 4; p++) {
                     int k = 1;
@@ -553,16 +575,37 @@ public class KnittingPattern {
                     if (k >= 2 && p * k > bestP * bestK) { bestP = p; bestK = k; }
                 }
                 if (bestP > 0) {
-                    List<String> group = new ArrayList<>();
-                    for (int j = 0; j < bestP; j++) group.add(toks.get(i + j).text());
-                    out.add("(" + String.join(", ", group) + ")" + times(bestK));
+                    sb.append('(');
+                    int[][] inner = new int[bestP][];
+                    for (int j = 0; j < bestP; j++) {
+                        if (j > 0) sb.append(", ");
+                        int a = sb.length();
+                        sb.append(toks.get(i + j).text());
+                        inner[j] = new int[] { a, sb.length() };
+                    }
+                    sb.append(')').append(times(bestK));
+                    for (int k = 0; k < bestK; k++)
+                        for (int j = 0; j < bestP; j++) {
+                            int n = toks.get(i + j).count();
+                            for (int q = 0; q < n; q++) {
+                                ranges.add(inner[j]);
+                                hints.add((n > 1 ? (q + 1) + " of " + n + ", " : "") + "set " + (k + 1) + " of " + bestK);
+                            }
+                        }
                     i += bestP * bestK;
                 } else {
-                    out.add(toks.get(i).text());
+                    Tok t = toks.get(i);
+                    int a = sb.length();
+                    sb.append(t.text());
+                    for (int q = 0; q < t.count(); q++) {
+                        ranges.add(new int[] { a, sb.length() });
+                        hints.add(t.count() > 1 ? (q + 1) + " of " + t.count() : "");
+                    }
                     i++;
                 }
             }
-            return out;
+            sb.append(c.panel ? "." : "; repeat from * to end.");
+            return new Mapped(sb.toString(), ranges, hints);
         }
 
         private static boolean sameRun(List<Tok> t, int a, int b, int len) {
@@ -571,17 +614,7 @@ public class KnittingPattern {
         }
 
         /** The full written instruction for one chart row. */
-        static String body(Chart c, int r) {
-            List<Tok> toks = tokens(c, r);
-            if (toks.isEmpty()) return "No stitches.";
-            if (toks.size() == 1 && toks.get(0).countable()) {
-                Tok t = toks.get(0);
-                String verb = t.ab().equals("k") ? "Knit" : "Purl";
-                return t.yarn().isEmpty() ? verb + "." : verb + " every stitch with yarn " + t.yarn() + ".";
-            }
-            String seq = String.join(", ", compress(toks));
-            return c.panel ? seq + "." : "*" + seq + "; repeat from * to end.";
-        }
+        static String body(Chart c, int r) { return mapped(c, r).text(); }
 
         /** Every row as {label, text}; a row identical to an earlier one says "As row 1." */
         static List<String[]> rows(Chart c) {
@@ -1542,10 +1575,236 @@ public class KnittingPattern {
             + "img.chart{max-width:100%;border:1px solid #E6DED4;background:#fff}.warn{color:#9A5B00}.muted{color:#6E6660}"
             + "@media print{body{background:#fff;margin:0}h2{break-after:avoid}img.chart{break-inside:avoid}}";
 
+        /** Extra styles for the row tracker in an exported web page. Hidden when printing. */
+        static final String TRACKER_CSS =
+              "#chartbox{position:relative;display:inline-block;max-width:100%;border:1px solid #E6DED4;background:#fff;line-height:0}"
+            + "#chartbox img.chart{border:0;display:block;max-width:100%;height:auto}"
+            + ".hl{position:absolute;pointer-events:none;box-sizing:border-box}"
+            + ".hl-row{background:rgba(255,205,40,.30);border:2px solid #E0A800}"
+            + ".hl-st{background:rgba(255,160,0,.45);border:3px solid #7A3E2E;border-radius:2px}"
+            + ".trk{border:1px solid #E6DED4;border-radius:12px;padding:1rem 1.1rem;background:#fff;margin:1rem 0}"
+            + ".trk-row{font-size:1.9rem;color:#7A3E2E;font-weight:bold;line-height:1.2}"
+            + ".trk-sub{color:#6E6660}.trk-text{font-size:1.45rem;margin:.6rem 0}"
+            + "mark{background:#FFC450;border-radius:3px;padding:0 .1em}"
+            + ".trk-st{font:bold 1.25rem sans-serif;margin:.4rem 0 0}.trk-where{color:#6E6660;font-size:.95rem;margin:0 0 .6rem}"
+            + ".bar{height:10px;background:#F1EBE3;border-radius:5px;overflow:hidden;margin-top:.5rem}"
+            + "#tBar{height:100%;background:#7A3E2E;width:0}#tProgText{font-size:.9rem;color:#6E6660}"
+            + ".btns{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.6rem 0}"
+            + ".trk button{font:1.05rem sans-serif;padding:.85rem .5rem;border-radius:8px;border:1px solid #C9BFB4;"
+            + "background:#F7F3EC;color:#2E2A27;cursor:pointer;touch-action:manipulation}"
+            + ".trk button.main{background:#7A3E2E;border-color:#7A3E2E;color:#fff;font-weight:bold}"
+            + ".trk button{-webkit-tap-highlight-color:transparent;outline:none}.trk button:active{filter:brightness(.88)}"
+            + ".trk button:focus-visible{outline:3px solid #E0A800;outline-offset:2px}"
+            + "#chartbox{margin:.2rem 0 .4rem}"
+            + ".trk input{width:4.5em;font-size:1rem}.trk small,.trk label{color:#6E6660}"
+            + "@media print{.trk{border:0;padding:0}.trk>*:not(#chartbox),.hl{display:none!important}}";
+
+        /** The row tracker's controls; {@link #TRACKER_JS} brings them to life. */
+        static String trackerCard(Chart c, String chartSrc) {
+            String rw = c.rowWord().toLowerCase(), rws = c.rowsWord();
+            return "<div class='trk' id='tracker'>"
+                 + "<div class='trk-row' id='tRow'></div><div class='trk-sub' id='tSub'></div>"
+                 + "<div id='tProg'><div class='bar'><div id='tBar'></div></div><div id='tProgText'></div></div>"
+                 + "<div class='trk-text' id='tText'></div>"
+                 + "<p class='trk-st' id='tStitch'></p><p class='trk-where' id='tWhere'></p>"
+                 + "<div id='chartbox'><img class='chart' src='" + chartSrc + "' alt='Chart'></div>"
+                 + "<div class='btns'><button id='bPrevSt'>◀ Back a stitch</button><button id='bNextSt' class='main'>Next stitch ▶</button>"
+                 + "<button id='bPrevRow'>◀ Back a " + rw + "</button><button id='bNextRow' class='main'>Done — next " + rw + " ▶</button>"
+                 + "<button id='bGo'>Go to " + rw + "…</button><button id='bReset'>Start again</button></div>"
+                 + "<p><b>Up next:</b> <span id='tNext'></span></p>"
+                 + "<p><label>Plan: <input id='pRows' type='number' min='0' inputmode='numeric'> " + rws
+                 + "</label><span id='pAcrossWrap'><label>, <input id='pAcross' type='number' min='1' inputmode='numeric'> "
+                 + "repeats across</label></span>"
+                 + "<span id='awakeWrap' style='display:none'><br><label><input type='checkbox' id='awake' style='width:auto'> "
+                 + "Keep the screen on while I knit</label></span></p>"
+                 + "<p><small>Your place is saved in this browser. Keys: → or Space next stitch, ← back a stitch, "
+                 + "↑ next " + rw + ", ↓ back a " + rw + ".</small></p></div>";
+        }
+
+        /** Everything the web-page tracker needs: each row's text, its stitches, and where the chart squares are. */
+        static String trackerData(Chart c, ChartView v, int plannedRows, int repeatsAcross) {
+            Dimension d = v.size();
+            StringBuilder j = new StringBuilder("{");
+            j.append("\"key\":").append(js(TrackerPanel.keyFor(c))).append(",\"h\":").append(c.height())
+             .append(",\"round\":").append(c.inTheRound).append(",\"panel\":").append(c.panel)
+             .append(",\"rowWord\":").append(js(c.rowWord())).append(",\"rowsWord\":").append(js(c.rowsWord()))
+             .append(",\"planned\":").append(plannedRows).append(",\"across\":").append(repeatsAcross)
+             .append(",\"geo\":{\"W\":").append(d.width).append(",\"H\":").append(d.height)
+             .append(",\"left\":").append(v.left).append(",\"top\":").append(v.top).append(",\"cs\":").append(v.cs)
+             .append(",\"rows\":").append(v.rows()).append(",\"cols\":").append(v.cols())
+             .append(",\"w\":").append(c.width()).append(",\"across\":").append(v.across).append("},\"rows\":[");
+            for (int r = 0; r < c.height(); r++) {
+                if (r > 0) j.append(',');
+                Instructions.Mapped m = Instructions.mapped(c, r);
+                List<Instructions.Step> steps = Instructions.steps(c, r);
+                j.append("{\"text\":").append(js(m.text())).append(",\"steps\":[");
+                for (int i = 0; i < steps.size(); i++) {
+                    Instructions.Step st = steps.get(i);
+                    int[] rg = i < m.ranges().size() ? m.ranges().get(i) : new int[] { 0, 0 };
+                    String hint = i < m.hints().size() ? m.hints().get(i) : "";
+                    if (i > 0) j.append(',');
+                    j.append('[').append(st.col()).append(',').append(st.span()).append(',').append(js(st.text()))
+                     .append(',').append(rg[0]).append(',').append(rg[1]).append(',').append(js(hint)).append(']');
+                }
+                j.append("]}");
+            }
+            return j.append("]}").toString();
+        }
+
+        /** A JavaScript string literal that is also safe inside an HTML script element. */
+        static String js(String s) {
+            StringBuilder b = new StringBuilder("\"");
+            for (char ch : s.toCharArray()) {
+                switch (ch) {
+                    case '"' -> b.append("\\\"");
+                    case '\\' -> b.append("\\\\");
+                    case '\n' -> b.append("\\n");
+                    case '\r' -> b.append("\\r");
+                    case '<' -> b.append("\\u003c");
+                    case '>' -> b.append("\\u003e");
+                    case '&' -> b.append("\\u0026");
+                    case '\u2028' -> b.append("\\u2028");
+                    case '\u2029' -> b.append("\\u2029");
+                    default -> b.append(ch);
+                }
+            }
+            return b.append('"').toString();
+        }
+
+        /** The web-page row tracker. It mirrors the tracker in the program. */
+        static final String TRACKER_JS = """
+            (function () {
+              var D = KPS_DATA, KEY = 'knitting-pattern-studio:' + D.key;
+              var st = { row: 1, step: 0, across: 1, planned: D.planned, acrossN: D.across };
+              try { var s = JSON.parse(localStorage.getItem(KEY)); if (s) for (var k in s) st[k] = s[k]; } catch (e) { }
+              function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { } }
+              function $(id) { return document.getElementById(id); }
+              function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+              function chartRow() { return (st.row - 1) % D.h; }
+              function steps() { return D.rows[chartRow()].steps; }
+              function acrossTotal() { return D.panel ? 1 : Math.max(1, st.acrossN | 0); }
+
+              function setRow(r) { st.row = Math.max(1, r); st.step = 0; st.across = 1; render(); }
+              function moveStitch(d) {
+                var n = steps().length;
+                if (!n) { setRow(st.row + d); return; }
+                st.step += d;
+                if (st.step >= n) {
+                  st.step = 0;
+                  if (++st.across > acrossTotal()) { setRow(st.row + 1); return; }
+                } else if (st.step < 0) {
+                  if (--st.across < 1) {
+                    if (st.row === 1) { st.step = 0; st.across = 1; render(); return; }
+                    setRow(st.row - 1);
+                    st.across = acrossTotal();
+                    st.step = Math.max(0, steps().length - 1);
+                  } else st.step = n - 1;
+                }
+                render();
+              }
+
+              function box(x, y, w, h, cls) {
+                var g = D.geo, d = document.createElement('div');
+                d.className = 'hl ' + cls;
+                d.style.left = (x / g.W * 100) + '%'; d.style.top = (y / g.H * 100) + '%';
+                d.style.width = (w / g.W * 100) + '%'; d.style.height = (h / g.H * 100) + '%';
+                $('chartbox').appendChild(d);
+              }
+
+              function render() {
+                var r = chartRow(), row = D.rows[r], g = D.geo, list = row.steps, rw = D.rowWord.toLowerCase();
+                if (st.step >= list.length) st.step = Math.max(0, list.length - 1);
+                if (st.across > acrossTotal()) st.across = acrossTotal();
+                var rs = D.round || (st.row - 1) % 2 === 0;
+                $('tRow').textContent = D.rowWord + ' ' + st.row + (D.round ? '' : rs ? ' · right side' : ' · wrong side');
+                var rep = Math.floor((st.row - 1) / D.h) + 1, planned = Math.max(0, st.planned | 0), reps = Math.ceil(planned / D.h);
+                $('tSub').textContent = 'Chart ' + rw + ' ' + (r + 1) + ' of ' + D.h + ' · repeat ' + rep + (planned && rep <= reps ? ' of ' + reps : '');
+                $('tProg').style.display = planned ? '' : 'none';
+                if (planned) {
+                  var left = planned - st.row;
+                  $('tBar').style.width = Math.min(100, (st.row - 1) / planned * 100) + '%';
+                  $('tProgText').textContent = st.row > planned ? 'All ' + planned + ' ' + D.rowsWord + ' planned are done'
+                    : left === 0 ? 'Last ' + rw + ' of the ' + planned + ' planned'
+                    : left + ' ' + (left === 1 ? rw : D.rowsWord) + ' to go after this one (' + planned + ' planned)';
+                }
+                var cur = list[st.step];
+                if (cur) {
+                  var t = row.text;
+                  $('tText').innerHTML = esc(t.slice(0, cur[3])) + '<mark>' + esc(t.slice(cur[3], cur[4])) + '</mark>' + esc(t.slice(cur[4]));
+                  $('tStitch').textContent = 'Stitch ' + (st.step + 1) + ' of ' + list.length + ': ' + cur[2];
+                  var where = D.panel ? 'in the panel' : acrossTotal() > 1 ? 'repeat ' + st.across + ' of ' + acrossTotal() + ' across the ' + rw : 'in the repeat';
+                  $('tWhere').textContent = cur[5] ? cur[5] + ' · ' + where : where;
+                } else {
+                  $('tText').textContent = row.text; $('tStitch').textContent = 'No stitches in this ' + rw; $('tWhere').textContent = '';
+                }
+                $('tNext').textContent = D.rows[st.row % D.h].text;
+
+                var old = $('chartbox').querySelectorAll('.hl');
+                for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
+                for (var dr = 0; dr < g.rows; dr++) {
+                  if (dr % D.h !== r) continue;
+                  var y = g.top + (g.rows - 1 - dr) * g.cs;
+                  box(g.left, y, g.cols * g.cs, g.cs, 'hl-row');
+                  if (cur) for (var a = 0; a < g.across; a++) box(g.left + (a * g.w + cur[0]) * g.cs, y, cur[1] * g.cs, g.cs, 'hl-st');
+                }
+                $('pRows').value = st.planned; $('pAcross').value = st.acrossN;
+                save();
+              }
+
+              $('bNextSt').onclick = function () { moveStitch(1); };
+              $('bPrevSt').onclick = function () { moveStitch(-1); };
+              $('bNextRow').onclick = function () { setRow(st.row + 1); };
+              $('bPrevRow').onclick = function () { setRow(st.row - 1); };
+              $('bGo').onclick = function () {
+                var v = prompt('Which ' + D.rowWord.toLowerCase() + ' are you on? (counting from the cast-on)', st.row);
+                if (v !== null && parseInt(v, 10) > 0) setRow(parseInt(v, 10));
+              };
+              $('bReset').onclick = function () { if (confirm('Go back to ' + D.rowWord.toLowerCase() + ' 1?')) setRow(1); };
+              $('pRows').onchange = function () { st.planned = Math.max(0, parseInt(this.value, 10) || 0); render(); };
+              $('pAcross').onchange = function () { st.acrossN = Math.max(1, parseInt(this.value, 10) || 1); render(); };
+              if (D.panel) $('pAcrossWrap').style.display = 'none';
+
+              document.addEventListener('keydown', function (e) {
+                var tag = (e.target.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || e.metaKey || e.ctrlKey || e.altKey) return;
+                var k = e.key;
+                if (k === 'ArrowRight' || k === ' ') moveStitch(1);
+                else if (k === 'ArrowLeft' || k === 'Backspace') moveStitch(-1);
+                else if (k === 'ArrowUp') setRow(st.row + 1);
+                else if (k === 'ArrowDown') setRow(st.row - 1);
+                else return;
+                e.preventDefault();
+              });
+
+              // Keep the screen on while knitting, where the browser allows it.
+              var lock = null, want = false;
+              function acquire() {
+                if (!want || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+                navigator.wakeLock.request('screen').then(function (l) { lock = l; }).catch(function () { });
+              }
+              if ('wakeLock' in navigator) {
+                $('awakeWrap').style.display = '';
+                $('awake').onchange = function () {
+                  want = this.checked;
+                  if (want) acquire(); else if (lock) { lock.release(); lock = null; }
+                };
+                document.addEventListener('visibilitychange', acquire);
+              }
+              render();
+            })();
+            """;
+
         static String pattern(Chart c, Function<Stitch, String> iconSrc, String chartSrc, boolean browser) {
+            return pattern(c, iconSrc, chartSrc, browser, null);
+        }
+
+        /** With {@code trackerData} (see {@link #trackerData}), a web page gets a working row tracker above the chart. */
+        static String pattern(Chart c, Function<Stitch, String> iconSrc, String chartSrc, boolean browser, String trackerData) {
+            boolean tracker = browser && trackerData != null && chartSrc != null;
             StringBuilder h = new StringBuilder("<html><head>");
             if (browser) h.append("<meta charset='utf-8'><meta name='viewport' content='width=device-width'><title>")
-                          .append(esc(c.name)).append("</title><style>").append(BROWSER_CSS).append("</style>");
+                          .append(esc(c.name)).append("</title><style>").append(BROWSER_CSS)
+                          .append(tracker ? TRACKER_CSS : "").append("</style>");
             else h.append("<style>").append(SWING_CSS).append("</style>");
             h.append("</head><body>");
             h.append("<h1>").append(esc(c.name)).append("</h1>");
@@ -1560,7 +1819,9 @@ public class KnittingPattern {
                      .append(esc(y.letter())).append("</b>: ").append(esc(y.name())).append("</td></tr>");
                 h.append("</table>");
             }
-            if (chartSrc != null) h.append("<h2>Chart</h2><p><img class='chart' src='").append(chartSrc).append("' alt='Chart'></p>");
+            if (tracker) {
+                h.append("<h2>Chart</h2>").append(trackerCard(c, chartSrc));
+            } else if (chartSrc != null) h.append("<h2>Chart</h2><p><img class='chart' src='").append(chartSrc).append("' alt='Chart'></p>");
 
             h.append("<h2>Key</h2><table>");
             for (Stitch s : Instructions.usedStitches(c)) {
@@ -1590,6 +1851,7 @@ public class KnittingPattern {
                 }
                 h.append("<p class='muted'><small>Made with ").append(APP_NAME).append(".</small></p>");
             }
+            if (tracker) h.append("<script>var KPS_DATA = ").append(trackerData).append(";\n").append(TRACKER_JS).append("</script>");
             return h.append("</body></html>").toString();
         }
 
@@ -1948,6 +2210,8 @@ public class KnittingPattern {
         final JLabel big = new JLabel(), sub = new JLabel(), nextLabel = new JLabel(), awakeLabel = new JLabel(),
                      stitchLabel = new JLabel(" ", SwingConstants.CENTER), acrossLabel = new JLabel(" ", SwingConstants.CENTER);
         final JProgressBar progress = new JProgressBar();
+        static final javax.swing.text.Highlighter.HighlightPainter WORD_HILITE =
+                new javax.swing.text.DefaultHighlighter.DefaultHighlightPainter(new Color(255, 196, 80));
         final JTextArea text = new JTextArea();
         final JCheckBox awakeBox = new JCheckBox("Keep the screen awake while I'm using the tracker",
                 PREFS == null || PREFS.getBoolean(KEEP_AWAKE_PREF, true));
@@ -2085,9 +2349,12 @@ public class KnittingPattern {
             });
         }
 
-        String key() {
-            String k = chart.name.length() > 60 ? chart.name.substring(0, 60) : chart.name;
-            return k + "#" + Integer.toHexString(chart.name.hashCode());
+        String key() { return keyFor(chart); }
+
+        /** The key under which a pattern's saved place and size settings are kept (preference keys are length-limited). */
+        static String keyFor(Chart c) {
+            String k = c.name.length() > 60 ? c.name.substring(0, 60) : c.name;
+            return k + "#" + Integer.toHexString(c.name.hashCode());
         }
 
         void setChart(Chart c) {
@@ -2199,7 +2466,9 @@ public class KnittingPattern {
                         : left + " " + (left == 1 ? rw : rws) + " to go after this one (" + planned + " planned)");
             }
 
-            text.setText(Instructions.body(chart, r));
+            Instructions.Mapped words = Instructions.mapped(chart, r);
+            text.getHighlighter().removeAllHighlights();
+            text.setText(words.text());
             text.setCaretPosition(0);
             int nr = row % h;
             nextLabel.setText("<html><b>Up next:</b> " + Html.esc(Instructions.body(chart, nr)) + "</html>");
@@ -2212,10 +2481,18 @@ public class KnittingPattern {
                 acrossLabel.setText(" ");
             } else {
                 step = Math.min(step, steps.size() - 1);
+                String hint = step < words.hints().size() ? words.hints().get(step) : "";
                 stitchLabel.setText("Stitch " + (step + 1) + " of " + steps.size() + ":  " + steps.get(step).text());
-                acrossLabel.setText(chart.panel ? "in the panel"
+                // Pick out the words for this stitch in the written instruction too.
+                if (step < words.ranges().size()) {
+                    int[] rg = words.ranges().get(step);
+                    try { text.getHighlighter().addHighlight(rg[0], rg[1], WORD_HILITE); }
+                    catch (javax.swing.text.BadLocationException ignored) { }
+                }
+                String where = chart.panel ? "in the panel"
                         : total > 1 ? "repeat " + across + " of " + total + " across the " + rw
-                        : "in the repeat");
+                        : "in the repeat";
+                acrossLabel.setText(hint.isEmpty() ? where : hint + "  ·  " + where);
             }
             highlighter.accept(r, currentStitch());
         }
@@ -2245,6 +2522,13 @@ public class KnittingPattern {
         Chart chart;
         boolean inches, updating;
         Runnable onChange = () -> { };
+        /** Each pattern remembers its own gauge, size and yarn settings. */
+        static final Preferences PREFS = prefsNode();
+
+        static Preferences prefsNode() {
+            try { return Preferences.userRoot().node("knitting-pattern-studio/size"); }
+            catch (SecurityException e) { return null; }
+        }
 
         double rowsPerUnit() { return val(gaugeRows) / (inches ? 4.0 : 10.0); }
         double stsPerUnit()  { return val(gaugeSts) / (inches ? 4.0 : 10.0); }
@@ -2292,14 +2576,16 @@ public class KnittingPattern {
             setLabels();
 
             weight.addActionListener(e -> {
+                if (updating) return;
                 Weight w = (Weight) weight.getSelectedItem();
                 updating = true;
                 gaugeSts.setValue(w.sts()); gaugeRows.setValue(w.rows());
                 perBall.setValue(inches ? (int) Math.round(w.perBall() * 1.0936 / 5) * 5 : w.perBall());
                 updating = false;
-                recompute();
+                changed();
             });
             units.addActionListener(e -> {
+                if (updating) return;
                 boolean nowInches = units.getSelectedIndex() == 1;
                 if (nowInches == inches) return;
                 double k = nowInches ? 1 / 2.54 : 2.54, yk = nowInches ? 1.0936 : 1 / 1.0936;
@@ -2310,10 +2596,43 @@ public class KnittingPattern {
                 inches = nowInches;
                 updating = false;
                 setLabels();
-                recompute();
+                changed();
             });
             for (JSpinner s : new JSpinner[] { gaugeSts, gaugeRows, width, length, edges, perBall })
-                s.addChangeListener(e -> recompute());
+                s.addChangeListener(e -> changed());
+        }
+
+        /** The person changed a setting: work everything out again and remember it for this pattern. */
+        void changed() {
+            if (updating || chart == null) return;
+            recompute();
+            if (PREFS != null)
+                PREFS.put(TrackerPanel.keyFor(chart), String.join(";", "1", inches ? "in" : "cm",
+                        String.valueOf(weight.getSelectedIndex()), String.valueOf(val(gaugeSts)), String.valueOf(val(gaugeRows)),
+                        String.valueOf(val(width)), String.valueOf(val(length)), String.valueOf((int) val(edges)),
+                        String.valueOf((int) val(perBall))));
+        }
+
+        /** Puts back the settings saved for a pattern. Returns false if it has none (or they can't be read). */
+        boolean restore(Chart c) {
+            String saved = PREFS == null ? null : PREFS.get(TrackerPanel.keyFor(c), null);
+            if (saved == null) return false;
+            String[] p = saved.split(";");
+            if (p.length != 9 || !p[0].equals("1")) return false;
+            try {
+                inches = p[1].equals("in");
+                units.setSelectedIndex(inches ? 1 : 0);
+                weight.setSelectedIndex(Math.max(0, Math.min(WEIGHTS.length - 1, Integer.parseInt(p[2]))));
+                gaugeSts.setValue(Double.parseDouble(p[3]));
+                gaugeRows.setValue(Double.parseDouble(p[4]));
+                width.setValue(Double.parseDouble(p[5]));
+                length.setValue(Double.parseDouble(p[6]));
+                edges.setValue(Integer.parseInt(p[7]));
+                perBall.setValue(Integer.parseInt(p[8]));
+                return true;
+            } catch (RuntimeException e) {
+                return false;   // a value out of range or unreadable: fall back to the defaults
+            }
         }
 
         void setLabels() {
@@ -2328,7 +2647,9 @@ public class KnittingPattern {
         void setChart(Chart c) {
             chart = c;
             updating = true;
-            edges.setValue(c.inTheRound || c.panel ? 0 : 2);
+            // A pattern with no saved settings keeps the units, yarn and sizes already showing.
+            if (!restore(c)) edges.setValue(c.inTheRound || c.panel ? 0 : 2);
+            setLabels();
             updating = false;
             edges.setEnabled(!c.panel);
             width.setEnabled(!c.panel);
@@ -2392,6 +2713,8 @@ public class KnittingPattern {
             s.append("<p class='muted'>This is a rough estimate from typical yarn use, with 10% extra allowed. ")
              .append("Cables and colourwork use more yarn and are allowed for. Always knit a gauge swatch first, ")
              .append("and buy an extra ball from the same dye lot.</p>");
+            s.append("<p class='muted'>These settings are remembered for this pattern. The Row tracker uses them to show how many ")
+             .append(rw).append(" are left and how many repeats go across.</p>");
             setHtml(out, s.append("</body></html>").toString());
             onChange.run();
         }
@@ -2604,7 +2927,7 @@ public class KnittingPattern {
             JMenu help = new JMenu("Help");
             help.add(item("How to read a chart", null, this::howToRead));
             help.add(item("About", null, () -> JOptionPane.showMessageDialog(this,
-                    APP_NAME + " " + VERSION + "\nDesign, view and follow knitting charts.\nMIT licence.\n\n"
+                    APP_NAME + " " + VERSION + "\nDesign, view and follow knitting charts.\n\n"
                     + "Copyright Mario Gianota 2026. All Rights Reserved.\n"
                     + "Feature requests, bugs and suggestions to mariogianota@protonmail.com.", "About",
                     JOptionPane.INFORMATION_MESSAGE)));
@@ -3007,7 +3330,8 @@ public class KnittingPattern {
             if (f == null) return;
             try {
                 ChartView v = new ChartView(current, chartPanel.across, chartPanel.up, 22);
-                String html = Html.pattern(current, s -> Html.dataUri(Renderer.icon(s, 22, 2)), Html.dataUri(v.image(2)), true)
+                String data = Html.trackerData(current, v, calculator.plannedRows(), calculator.repeatsAcross(current));
+                String html = Html.pattern(current, s -> Html.dataUri(Renderer.icon(s, 22, 2)), Html.dataUri(v.image(2)), true, data)
                         .replace("<img class='chart' ", "<img class='chart' width='" + v.size().width + "' ");
                 Files.writeString(f.toPath(), html, StandardCharsets.UTF_8);
                 say("Exported " + f.getName());

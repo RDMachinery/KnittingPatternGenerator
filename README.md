@@ -19,7 +19,8 @@ Knitting Pattern Studio shows a knitting chart and its written, row-by-row instr
 - **A size and yarn calculator.** Enter your gauge and the size you want. It tells you how many stitches to cast on (rounded to whole repeats), how many rows to work, and roughly how much yarn you need, split by colour for colourwork.
 - **A chart designer.** Paint stitches and colours onto a grid. The instructions update as you draw.
 - **Mistake checks.** It warns you if a row needs more stitches than the row before left on the needle, if a cable is drawn the wrong width, or if a colourwork float is long enough to snag.
-- **Print and share.** Print the pattern, save it as a web page to email or open on a tablet, or save the chart as a picture.
+- **Knit from your phone or tablet.** Save the pattern as a web page with its own row tracker: big buttons, the chart highlighted as you go, and your place remembered. No program to install on the phone.
+- **Print and share.** Print the pattern, save it as a web page to email, or save the chart as a picture.
 
 ---
 
@@ -89,7 +90,7 @@ The tracker shows the row you're about to knit in large print, says whether it's
 
 **How far you've got.** Under the row number, the tracker shows which repeat of the chart you're on (*"repeat 3 of 23"*) and a bar showing how many rows are left. The total comes from the length you entered in the **Size & yarn** tab, so set that up first.
 
-**Stitch by stitch.** For lace and colourwork it's easy to lose your place in the middle of a row. Press **Next stitch** and the stitch you're on is picked out on the chart, with its instruction in large print (*"Stitch 4 of 7: MB"*). Stitches go in the order you work them: right to left on right-side rows, left to right on wrong-side rows. A cable counts as one step. After the last stitch of the repeat, the tracker starts the next repeat across the row (*"repeat 2 of 11 across the row"*, worked out from the width in Size & yarn). After the last repeat it moves on to the next row by itself.
+**Stitch by stitch.** For lace and colourwork it's easy to lose your place in the middle of a row. Press **Next stitch** and the stitch you're on is picked out on the chart and highlighted in the written instruction, with its instruction in large print (*"Stitch 4 of 7: MB"*). For a run of the same stitch, the tracker counts it for you: on *k5* it says *"2 of 5"*, and inside *(yo, k1) 6 times* it says which set you're on. Stitches go in the order you work them: right to left on right-side rows, left to right on wrong-side rows. A cable counts as one step. After the last stitch of the repeat, the tracker starts the next repeat across the row (*"repeat 2 of 11 across the row"*, worked out from the width in Size & yarn). After the last repeat it moves on to the next row by itself.
 
 You don't need the mouse while you knit:
 
@@ -119,6 +120,8 @@ It then tells you:
 - **How many stitches to cast on**, rounded to whole pattern repeats, and the actual width that gives you.
 - **How many rows to work**, and where to stop so you finish at the end of a repeat.
 - **About how much yarn you need**, in total and per colour for colourwork.
+
+**Each pattern remembers its own settings.** If you're knitting a fingering-weight hat and a chunky blanket at the same time, each keeps its own gauge, size and yarn, and the Row tracker uses them.
 
 > The yarn amount is an estimate based on typical yarn use. It allows extra for cables and colourwork, and adds 10% on top. Always buy an extra ball from the same dye lot.
 
@@ -232,9 +235,25 @@ From the **File** menu:
 | Option | What you get |
 |---|---|
 | **Print…** | The chart on the first page, then the key, instructions and notes |
-| **Export as web page (HTML)…** | A single file that opens in any web browser, on a computer, tablet or phone. It contains the chart, key, instructions and notes, and prints neatly. Good for emailing |
+| **Export as web page (HTML)…** | A single file that opens in any web browser, on a computer, tablet or phone. It contains a row tracker, the chart, key, instructions and notes, and prints neatly. Good for emailing |
 | **Export chart as picture (PNG)…** | A high-quality image of the chart, for a blog, Ravelry or a notebook |
 | **Export as plain text…** | The whole pattern as simple text, with the chart drawn in letters |
+
+### Knitting from your phone or tablet
+
+<img src="web-tracker.png" alt="The row tracker in an exported web page, on a phone" width="320" align="right">
+
+The exported web page has its own **row tracker**, made for a phone or tablet on the arm of the sofa:
+
+- The row you're on in large print, with the stitch you're on highlighted in the instruction and on the chart.
+- Big buttons for **Next stitch**, **Back a stitch**, **Done — next row** and **Back a row**, easy to tap with knitting in your hands.
+- How many rows are left, and how many repeats across, taken from the **Size & yarn** tab when you export. You can change them on the page.
+- **Keep the screen on while I knit**, on phones and browsers that allow it.
+- Your place is saved in the browser, so you can close the page and come back to it later.
+
+To put it on your phone, export the web page, then email it to yourself, or save it to iCloud Drive, Google Drive or Dropbox, and open it from there. It works offline. When you print the page, the tracker buttons are left out and only the pattern is printed.
+
+<br clear="right">
 
 ---
 
@@ -244,7 +263,7 @@ From the **File** menu:
 
 **Does it need the internet?** No. Everything happens on your computer.
 
-**Where is my row-tracker position kept?** In your computer's user settings, so it survives restarts. Each pattern has its own position, looked up by the pattern's name.
+**Where is my row-tracker position kept?** In your computer's user settings, so it survives restarts. Each pattern has its own position and its own Size & yarn settings, looked up by the pattern's name. In an exported web page, your place is kept by the web browser you open it in.
 
 **Why is a decrease only one square?** A chart shows the stitches you **end up with** after each row. A k2tog turns two stitches into one, so it takes one square. That's why lace rows, where each decrease is paired with a yarn over, keep the same width.
 
