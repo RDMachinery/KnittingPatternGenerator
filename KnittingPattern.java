@@ -53,7 +53,7 @@ import java.util.prefs.Preferences;
 public class KnittingPattern {
 
     static final String APP_NAME = "Knitting Pattern Studio";
-    static final String VERSION = "2.0";
+    static final String VERSION = "2.1";
 
     // =======================================================================
     // Stitches
@@ -905,12 +905,183 @@ public class KnittingPattern {
             }
         }
 
+        /**
+         * Draws a small picture of how a single-square stitch looks in the knitted
+         * fabric (from the right side): a knit stitch is a V, a purl stitch a
+         * horizontal bump, a yarn over a little eyelet, decreases are stitches
+         * leaning over one another, and increases are twisted stitches.
+         */
+        static void stitchPicture(Graphics2D g, Stitch s, double x, double y, double cs, Color fill) {
+            stitchPicture(g, s, x, y, cs, fill, 1.0);
+        }
+
+        /** As above; a lower contrast (0 to 1) gives softer outlines, so tiny swatches still show their colours. */
+        static void stitchPicture(Graphics2D g, Stitch s, double x, double y, double cs, Color fill, double contrast) {
+            if (s == Stitch.NO_STITCH || s.isCable()) return;
+            Color ink = inkFor(fill);
+            Color body = mix(fill, ink, 0.12 * contrast), shade = mix(fill, ink, 0.30 * contrast), edge = mix(fill, ink, 0.62 * contrast);
+            float line = (float) Math.max(0.7, cs / 24.0);
+            double cx = x + cs / 2, base = y + cs * 0.90, len = cs * 0.80, wid = cs * 0.30;
+            switch (s) {
+                case KNIT -> {
+                    petal(g, cx, base, len, wid, -24, body, edge, line);
+                    petal(g, cx, base, len, wid, 24, body, edge, line);
+                }
+                case PURL -> {
+                    Ellipse2D bump = new Ellipse2D.Double(x + cs * 0.08, y + cs * 0.32, cs * 0.84, cs * 0.36);
+                    g.setColor(body); g.fill(bump);
+                    g.setColor(edge); g.setStroke(new BasicStroke(line)); g.draw(bump);
+                    // A soft highlight along the top of the bump.
+                    g.setColor(mix(fill, Color.WHITE, 0.35));
+                    g.draw(new Arc2D.Double(x + cs * 0.18, y + cs * 0.38, cs * 0.64, cs * 0.20, 20, 140, Arc2D.OPEN));
+                }
+                case YO -> {
+                    double d = cs * 0.62, h = cs * 0.30;
+                    Ellipse2D ring = new Ellipse2D.Double(cx - d / 2, y + cs / 2 - d / 2, d, d);
+                    g.setColor(body); g.fill(ring);
+                    g.setColor(edge); g.setStroke(new BasicStroke(line)); g.draw(ring);
+                    g.setColor(mix(fill, INK, 0.70));
+                    g.fill(new Ellipse2D.Double(cx - h / 2, y + cs / 2 - h / 2, h, h));
+                }
+                case K2TOG -> {   // the left stitch lies on top, leaning right
+                    petal(g, x + cs * 0.32, base, len, wid, 16, shade, edge, line);
+                    petal(g, x + cs * 0.32, base, len, wid, 42, body, edge, line);
+                }
+                case SSK -> {     // the right stitch lies on top, leaning left
+                    petal(g, x + cs * 0.68, base, len, wid, -16, shade, edge, line);
+                    petal(g, x + cs * 0.68, base, len, wid, -42, body, edge, line);
+                }
+                case SK2P -> {    // three stitches gathered into one, the centre one on top
+                    petal(g, cx, base, len * 0.88, wid, -38, shade, edge, line);
+                    petal(g, cx, base, len * 0.88, wid, 38, shade, edge, line);
+                    petal(g, cx, base, len, wid, 0, body, edge, line);
+                }
+                case M1L, M1R -> { // a twisted stitch: its legs cross at the bottom
+                    double lean = s == Stitch.M1L ? -10 : 10, off = cs * 0.07;
+                    petal(g, cx + off, base, len * 0.92, wid, -22 + lean, body, edge, line);
+                    petal(g, cx - off, base, len * 0.92, wid, 22 + lean, body, edge, line);
+                    // A tiny arrow shows which way the increase leans.
+                    double ax = s == Stitch.M1L ? x + cs * 0.20 : x + cs * 0.80, ay = y + cs * 0.20, a = cs * 0.10;
+                    double dir = s == Stitch.M1L ? 1 : -1;
+                    g.setColor(edge);
+                    g.setStroke(new BasicStroke(line, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                    Path2D arrow = new Path2D.Double();
+                    arrow.moveTo(ax + dir * a, ay - a); arrow.lineTo(ax, ay); arrow.lineTo(ax + dir * a, ay + a);
+                    g.draw(arrow);
+                }
+                default -> { }
+            }
+        }
+
+        /** One leg of a stitch: an elongated oval standing on (px, py), tilted by deg (positive leans right). */
+        static void petal(Graphics2D g, double px, double py, double len, double wid, double deg, Color body, Color edge, float line) {
+            AffineTransform old = g.getTransform();
+            g.translate(px, py);
+            g.rotate(Math.toRadians(deg));
+            Ellipse2D e = new Ellipse2D.Double(-wid / 2, -len, wid, len);
+            g.setColor(body); g.fill(e);
+            g.setColor(edge); g.setStroke(new BasicStroke(line)); g.draw(e);
+            g.setTransform(old);
+        }
+
+        /** Draws a single-square stitch either as a chart symbol or as a picture of the stitch. */
+        static void stitch(Graphics2D g, Stitch s, double x, double y, double cs, Color fill, boolean pictures) {
+            if (pictures) stitchPicture(g, s, x, y, cs, fill);
+            else glyph(g, s, x, y, cs, inkFor(fill));
+        }
+
+        /**
+         * Paints the stitches and cables of a chart, tiled into a block of cols × rows
+         * squares whose top-left corner is (x, y). Display row 0 is the bottom row.
+         */
+        static void tile(Graphics2D g, Chart c, double x, double y, double cs, int cols, int rows, boolean pictures) {
+            tile(g, c, x, y, cs, cols, rows, pictures, false);
+        }
+
+        /**
+         * With {@code swatch} set, the stitches are drawn softly and each cable crossing is
+         * stretched over three rows, so a tiny swatch still looks like the fabric.
+         */
+        static void tile(Graphics2D g, Chart c, double x, double y, double cs, int cols, int rows, boolean pictures, boolean swatch) {
+            int w = c.width(), h = c.height();
+            for (int dr = 0; dr < rows; dr++) {
+                int r = dr % h;
+                double sy = y + (rows - 1 - dr) * cs;
+                for (int dc = 0; dc < cols; dc++) {
+                    int col = dc % w;
+                    Stitch s = c.cells[r][col];
+                    Color fill = s == Stitch.NO_STITCH ? NO_ST : c.fill(r, col);
+                    g.setColor(fill);
+                    g.fill(new Rectangle2D.Double(x + dc * cs, sy, cs + 0.5, cs + 0.5));
+                    if (s.isCable() && swatch) stitchPicture(g, Stitch.KNIT, x + dc * cs, sy, cs, fill, 0.5);
+                    else if (!s.isCable()) {
+                        if (swatch) stitchPicture(g, s, x + dc * cs, sy, cs, fill, c.isColourwork() ? 0.35 : 0.6);
+                        else stitch(g, s, x + dc * cs, sy, cs, fill, pictures);
+                    }
+                }
+            }
+            // Cables span several squares; draw each crossing once, across repeats.
+            for (int dr = 0; dr < rows; dr++) {
+                int r = dr % h;
+                double sy = y + (rows - 1 - dr) * cs, ch = swatch ? 3 * cs : cs;
+                if (swatch) sy -= cs;
+                for (int start = 0; start < cols; start += w) {
+                    int col = 0;
+                    while (col < w) {
+                        Stitch s = c.cells[r][col];
+                        if (!s.isCable()) { col++; continue; }
+                        int run = 1;
+                        while (col + run < w && c.cells[r][col + run] == s) run++;
+                        for (int u = 0; u < run / s.width; u++) {
+                            int dc = start + col + u * s.width;
+                            if (dc < cols) cable(g, x + dc * cs, sy, s.width * cs, ch, s.frontCross(), c.fill(r, col), swatch);
+                        }
+                        col += run;
+                    }
+                }
+            }
+        }
+
+        /** A little swatch showing the fabric a chart will knit, for the pattern list. Drawn as vectors so it stays sharp. */
+        static Icon thumbnail(Chart c, int size) {
+            return new Icon() {
+                public void paintIcon(Component comp, Graphics g0, int x, int y) {
+                    Graphics2D g = (Graphics2D) g0.create();
+                    smooth(g);
+                    int w = c.width(), h = c.height();
+                    // Small charts show at least two repeats; large ones show a close-up of one.
+                    double cs = Math.max(4, Math.min(9, Math.floor(size / (double) (w <= 6 ? 2 * w : w))));
+                    int cols = (int) Math.ceil(size / cs), rows = cols;
+                    Shape round = new RoundRectangle2D.Double(x, y, size, size, 8, 8);
+                    Shape oldClip = g.getClip();
+                    g.clip(round);
+                    g.setColor(PAPER);
+                    g.fill(round);
+                    tile(g, c, x, y + size - rows * cs, cs, cols, rows, true, true);
+                    g.setClip(oldClip);
+                    g.setColor(GRID);
+                    g.setStroke(new BasicStroke(1f));
+                    g.draw(new RoundRectangle2D.Double(x + 0.5, y + 0.5, size - 1, size - 1, 8, 8));
+                    g.dispose();
+                }
+                public int getIconWidth()  { return size; }
+                public int getIconHeight() { return size; }
+            };
+        }
+
         /** Draws a cable crossing filling the rectangle (x, y, w, h). */
         static void cable(Graphics2D g, double x, double y, double w, double h, boolean front, Color fill) {
-            Color ink = inkFor(fill);
+            cable(g, x, y, w, h, front, fill, false);
+        }
+
+        /** With {@code soft} set, only the strands are drawn, in gentler tones, for small fabric swatches. */
+        static void cable(Graphics2D g, double x, double y, double w, double h, boolean front, Color fill, boolean soft) {
+            Color ink = soft ? mix(fill, inkFor(fill), 0.45) : inkFor(fill);
             Rectangle2D box = new Rectangle2D.Double(x, y, w, h);
-            g.setColor(mix(fill, ink, 0.06));
-            g.fill(box);
+            if (!soft) {
+                g.setColor(mix(fill, ink, 0.06));
+                g.fill(box);
+            }
             // Each strand is an S-curve from the middle of one half at the bottom to the middle of the other half at the top.
             double q = w / 4, band = Math.min(h * 0.55, w * 0.22), edge = Math.max(1.2, h / 14.0);
             Path2D rising = new Path2D.Double();   // bottom-left to top-right
@@ -930,13 +1101,16 @@ public class KnittingPattern {
             g.setStroke(outer); g.setColor(ink);                   g.draw(top);
             g.setStroke(inner); g.setColor(fill);                  g.draw(top);
             g.setClip(oldClip);
+            if (soft) return;
             g.setStroke(new BasicStroke(1f));
             g.setColor(ink);
             g.draw(box);
         }
 
         /** A small picture of a stitch for keys and buttons. Cables use narrower squares to stay compact. */
-        static BufferedImage icon(Stitch s, int height, int scale) {
+        static BufferedImage icon(Stitch s, int height, int scale) { return icon(s, height, scale, false); }
+
+        static BufferedImage icon(Stitch s, int height, int scale, boolean pictures) {
             int cell = height, w = s.isCable() ? s.width * height / 2 : height;
             BufferedImage img = new BufferedImage(w * scale, cell * scale, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = img.createGraphics();
@@ -946,7 +1120,7 @@ public class KnittingPattern {
             else {
                 g.setColor(s == Stitch.NO_STITCH ? NO_ST : PAPER);
                 g.fill(new Rectangle2D.Double(0, 0, w, cell));
-                glyph(g, s, 0, 0, cell, INK);
+                stitch(g, s, 0, 0, cell, PAPER, pictures);
                 g.setColor(GRID);
                 g.setStroke(new BasicStroke(1f));
                 g.draw(new Rectangle2D.Double(0.5, 0.5, w - 1, cell - 1));
@@ -974,9 +1148,14 @@ public class KnittingPattern {
     static final class ChartView {
         final Chart c;
         final int across, up, cs, left, right, top = 12, bottom = 30;
+        /** True to draw pictures of the stitches instead of standard chart symbols (screen only). */
+        final boolean pictures;
 
-        ChartView(Chart c, int across, int up, int cs) {
+        ChartView(Chart c, int across, int up, int cs) { this(c, across, up, cs, false); }
+
+        ChartView(Chart c, int across, int up, int cs, boolean pictures) {
             this.c = c;
+            this.pictures = pictures;
             this.across = c.panel ? 1 : Math.max(1, across);
             this.up = Math.max(1, up);
             this.cs = cs;
@@ -1010,7 +1189,7 @@ public class KnittingPattern {
                     Color fill = s == Stitch.NO_STITCH ? Renderer.NO_ST : c.fill(r, col);
                     g.setColor(fill);
                     g.fillRect(x, y, cs, cs);
-                    if (!s.isCable()) Renderer.glyph(g, s, x, y, cs, Renderer.inkFor(fill));
+                    if (!s.isCable()) Renderer.stitch(g, s, x, y, cs, fill, pictures);
                 }
             }
 
@@ -1178,15 +1357,17 @@ public class KnittingPattern {
         }
 
         /** Swing's HTML viewer can't show data: images, so key icons are written to temporary files once. */
-        static final Map<Stitch, String> ICON_FILES = new EnumMap<>(Stitch.class);
+        static final Map<String, String> ICON_FILES = new HashMap<>();
         static Path iconDir;
 
-        static String iconFile(Stitch s) {
-            return ICON_FILES.computeIfAbsent(s, k -> {
+        /** The key icon as a chart symbol, or as a stitch picture to match the chart on screen. */
+        static String iconFile(Stitch s, boolean pictures) {
+            String name = s.name() + (pictures ? "-picture" : "");
+            return ICON_FILES.computeIfAbsent(name, k -> {
                 try {
                     if (iconDir == null) { iconDir = Files.createTempDirectory("knitting-icons"); iconDir.toFile().deleteOnExit(); }
-                    File f = iconDir.resolve(k.name() + ".png").toFile();
-                    ImageIO.write(Renderer.icon(k, 22, 1), "png", f);
+                    File f = iconDir.resolve(name + ".png").toFile();
+                    ImageIO.write(Renderer.icon(s, 22, 1, pictures), "png", f);
                     f.deleteOnExit();
                     return f.toURI().toURL().toString();
                 } catch (IOException e) {
@@ -1271,7 +1452,7 @@ public class KnittingPattern {
     static final class ChartPanel extends JPanel {
         Chart chart;
         int across = 2, up = 1, cs = 24, highlight = -1;
-        boolean editing;
+        boolean editing, pictures = true;
         BiConsumer<int[], Boolean> painter;   // {chartRow, chartCol}, true when a new stroke starts
         private int[] lastCell;
 
@@ -1287,7 +1468,7 @@ public class KnittingPattern {
             addMouseMotionListener(m);
         }
 
-        ChartView view() { return new ChartView(chart, across, up, cs); }
+        ChartView view() { return new ChartView(chart, across, up, cs, pictures); }
 
         void paintAt(MouseEvent e, boolean start) {
             if (!editing || chart == null || painter == null) return;
@@ -1346,7 +1527,8 @@ public class KnittingPattern {
             super(new BorderLayout());
             add(new JScrollPane(pane));
         }
-        void setChart(Chart c) { setHtml(pane, Html.pattern(c, Html::iconFile, null, false)); }
+        boolean pictures = true;
+        void setChart(Chart c) { setHtml(pane, Html.pattern(c, s -> Html.iconFile(s, pictures), null, false)); }
     }
 
     /** Pattern checks with a friendly explanation. */
@@ -1847,6 +2029,10 @@ public class KnittingPattern {
         final JSpinner across = new JSpinner(new SpinnerNumberModel(2, 1, 12, 1)), up = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1));
         final JSlider zoom = new JSlider(10, 48, 24);
         final JToggleButton editButton = new JToggleButton("✎ Edit chart");
+        static final Preferences VIEW_PREFS = viewPrefs();
+        static final String PICTURES_PREF = "stitchPictures";
+        final JCheckBox pictureBox = new JCheckBox("Stitch pictures",
+                VIEW_PREFS == null || VIEW_PREFS.getBoolean(PICTURES_PREF, true));
         final JCheckBoxMenuItem editItem = new JCheckBoxMenuItem("Edit chart");
         final EditBar editBar = new EditBar();
         final JLabel status = new JLabel(" ");
@@ -1878,8 +2064,10 @@ public class KnittingPattern {
                 @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean sel, boolean foc) {
                     super.getListCellRendererComponent(l, v, i, sel, foc);
                     Chart c = (Chart) v;
-                    setText("<html><body style='width:205px'><b>" + Html.esc(c.name) + (c.dirty ? " •" : "") + "</b><br><font color='"
+                    setText("<html><body style='width:150px'><b>" + Html.esc(c.name) + (c.dirty ? " •" : "") + "</b><br><font color='"
                             + (sel ? "#F2ECE4" : "#7B726B") + "'>" + Html.esc(c.summary()) + "</font></html>");
+                    setIcon(Renderer.thumbnail(c, 46));
+                    setIconTextGap(10);
                     setBackground(sel ? Renderer.ACCENT : Color.WHITE);
                     setForeground(sel ? Color.WHITE : Renderer.INK);
                     setOpaque(true);
@@ -1917,6 +2105,12 @@ public class KnittingPattern {
             tb.add(new JLabel("Zoom "));
             zoom.setMaximumSize(new Dimension(140, 30));
             tb.add(zoom);
+            tb.addSeparator();
+            pictureBox.setToolTipText("<html>Show a picture of each stitch as it looks in the knitted fabric,<br>"
+                    + "instead of the standard chart symbols. Printing and export always use the symbols.</html>");
+            pictureBox.setFocusable(false);
+            pictureBox.addActionListener(e -> setPictures(pictureBox.isSelected()));
+            tb.add(pictureBox);
             tb.addSeparator();
             tb.add(editButton);
             across.setMaximumSize(new Dimension(60, 30));
@@ -1976,6 +2170,7 @@ public class KnittingPattern {
             setContentPane(root);
             setJMenuBar(menus());
 
+            setPictures(pictureBox.isSelected());
             setSize(1440, 860);
             setLocationRelativeTo(null);
             list.setSelectedValue(initial != null ? initial : model.get(0), true);
@@ -2028,6 +2223,22 @@ public class KnittingPattern {
         }
 
         void say(String s) { status.setText(s); }
+
+        static Preferences viewPrefs() {
+            try { return Preferences.userRoot().node("knitting-pattern-studio/view"); }
+            catch (RuntimeException e) { return null; }
+        }
+
+        /** Switches the chart and the stitch palette between stitch pictures and chart symbols. */
+        void setPictures(boolean on) {
+            pictureBox.setSelected(on);
+            chartPanel.pictures = on;
+            instructions.pictures = on;
+            if (current != null) instructions.setChart(current);
+            editBar.updateIcons(on);
+            chartPanel.repaint();
+            if (VIEW_PREFS != null) VIEW_PREFS.putBoolean(PICTURES_PREF, on);
+        }
 
         // ---- showing a pattern ---------------------------------------------
 
@@ -2152,6 +2363,12 @@ public class KnittingPattern {
             int yarnTool = -1;
             final ButtonGroup group = new ButtonGroup();
             final JPanel yarnBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+            final Map<Stitch, JToggleButton> stitchButtons = new EnumMap<>(Stitch.class);
+
+            /** Shows the stitch buttons the same way as the chart: pictures or symbols. */
+            void updateIcons(boolean pictures) {
+                stitchButtons.forEach((s, b) -> b.setIcon(new ImageIcon(Renderer.icon(s, 20, 1, pictures))));
+            }
 
             EditBar() {
                 super(new GridLayout(2, 1));
@@ -2161,6 +2378,7 @@ public class KnittingPattern {
                 stitches.add(new JLabel(" Stitch "));
                 for (Stitch s : Stitch.values()) {
                     JToggleButton b = new JToggleButton(new ImageIcon(Renderer.icon(s, 20, 1)));
+                    stitchButtons.put(s, b);
                     b.setToolTipText("<html><b>" + s.label + "</b><br>" + Html.esc(s.description(false)) + "</html>");
                     b.setFocusable(false);
                     b.addActionListener(e -> { tool = s; yarnTool = -1; });

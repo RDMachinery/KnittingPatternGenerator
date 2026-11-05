@@ -12,6 +12,7 @@ Knitting Pattern Studio shows a knitting chart and its written, row-by-row instr
 
 ## What it does
 
+- **See the fabric at a glance.** Every pattern in the list has a little swatch beside it showing the fabric it knits, and the chart can show a picture of each stitch as it looks in your knitting — a V for a knit stitch, a bump for a purl, a little hole for a yarn over.
 - **Charts you can read easily.** Proper knitting symbols, row numbers on the correct side, stitch numbers along the bottom, and a red box around one repeat. Zoom in, and show the repeat several times across and up to see how the fabric will look.
 - **Written instructions, made for you.** Every chart comes with row-by-row instructions such as *"\*k2tog 3 times, (yo, k1) 6 times, k2tog 3 times; repeat from \* to end."* Wrong-side rows are turned around for you, so you never have to work out "purl the knits" in your head.
 - **A row tracker.** Shows one row at a time in large print and highlights it on the chart. Press *Done — next row* as you go. Your place is saved, so you can close the program and pick up where you left off.
@@ -68,11 +69,12 @@ The window has three parts:
 
 | Left | Middle | Right |
 |---|---|---|
-| Your **list of patterns**. Click one to open it. | The **chart**. Hover over any square to see which row and stitch it is. | Four tabs: **Instructions**, **Row tracker**, **Size & yarn** and **Checks**. |
+| Your **list of patterns**, each with a small swatch of the fabric it knits. Click one to open it. | The **chart**. Hover over any square to see which row and stitch it is. | Four tabs: **Instructions**, **Row tracker**, **Size & yarn** and **Checks**. |
 
 Above the chart:
 - **Repeats across / up** show the pattern repeated, so you can see how it tiles. Panels, such as a single cable, are shown once.
 - **Zoom** makes the squares bigger or smaller.
+- **Stitch pictures** switches between pictures of the stitches and the standard chart symbols (see *Stitch pictures* below). The program remembers which you prefer.
 - **✎ Edit chart** switches to design mode (see *Designing your own pattern* below).
 
 ### Instructions
@@ -127,6 +129,23 @@ If you're new to charts, choose **Help → How to read a chart**. In short:
 - **Knitting flat:** right-side rows have their number on the **right** and are read **right to left**. Wrong-side rows have their number on the **left** and are read **left to right**, doing the opposite of what you see: blank squares are purled and dots are knitted. The written instructions do this for you.
 - **Knitting in the round:** every round is read from right to left, and every number is on the right.
 - **The red box** is one repeat. Work it across the row as many times as your stitches allow.
+
+### Stitch pictures
+
+With **Stitch pictures** ticked (the usual setting), each square shows a small picture of the stitch as it will look in your knitting, from the right side. The stitch buttons and the key in the Instructions tab show the same pictures, so it's easy to match them up.
+
+| Picture | Stitch |
+|---|---|
+| A **V** | Knit |
+| A horizontal **bump** | Purl |
+| A small **hole** | Yarn over |
+| One stitch lying over another, **leaning right** | K2tog |
+| One stitch lying over another, **leaning left** | SSK |
+| **Three stitches** gathered into one | SK2P |
+| A stitch with **crossed legs** and a tiny arrow | M1L (arrow points left) / M1R (arrow points right) |
+| **Crossing strands** | Cables |
+
+Untick **Stitch pictures** to see the standard symbols used in printed patterns, shown in the table below. Printing and exporting always use the standard symbols.
 
 ### Symbols
 
@@ -209,6 +228,7 @@ From the **File** menu:
 - The whole program is a single Java file using only Java's built-in libraries, so there's nothing else to install or build. It runs with Java's source launcher on Java 17 or newer.
 - Each pattern is a grid of `Stitch` values (with how many stitches each one uses and makes) plus a yarn index per square. The written instructions, key, stitch-count checks, printing and row tracker are all generated from that grid.
 - `.knit` files are plain text: a few `key: value` lines, then the chart drawn with one character per stitch (`.` knit, `-` purl, `O` yarn over, `/` k2tog, `\` ssk, `^` sk2p, `L`/`R` make one, `F`/`B`/`G`/`H`/`X`/`Y` cables, `#` no stitch), and an optional block of yarn letters for colourwork. You can write or edit them in any text editor.
+- The pattern-list swatches and stitch pictures are drawn as vector shapes, so they stay sharp on high-resolution (Retina) screens.
 - If no display is available, the program falls back to text mode automatically.
 
 ---
