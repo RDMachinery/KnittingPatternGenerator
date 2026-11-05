@@ -1,4 +1,4 @@
-![Banner image](screenshot.jpg)
+![Banner image](screenshot.jpeg)
 
 # Knitting Pattern Studio
 
