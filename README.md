@@ -28,9 +28,34 @@ Knitting Pattern Studio shows a knitting chart and its written, row-by-row instr
 
 ## Getting started
 
-You need two things: **Java** (a free program that runs Knitting Pattern Studio) and the file **`KnittingPattern.java`** from this page.
+### The easy way: download the app
 
-### 1. Install Java (once)
+Go to the **[Releases page](https://github.com/RDMachinery/KnittingPatternGenerator/releases/latest)** and download the file for your computer. Everything it needs is included, so there's nothing else to install.
+
+| Your computer | Download |
+|---|---|
+| **Mac with Apple Silicon** (M1, M2, M3, M4…) | `KnittingPatternStudio-…-mac-apple-silicon.dmg` |
+| **Mac with an Intel processor** | `KnittingPatternStudio-…-mac-intel.dmg` |
+| **Windows** | `KnittingPatternStudio-…-windows.msi` (installer) or `…-windows-portable.zip` (no installing) |
+| **Linux** (Ubuntu, Debian, Mint) | `KnittingPatternStudio-…-linux-x64.deb` |
+| **Linux** (Fedora, openSUSE) | `KnittingPatternStudio-…-linux-x64.rpm` |
+| **Linux** (anything else) | `KnittingPatternStudio-…-linux-x64.tar.gz` |
+
+Not sure which Mac you have? Choose **Apple menu → About This Mac**. If it says *Chip: Apple M…* it's Apple Silicon; if it says *Processor: … Intel* it's Intel.
+
+**On a Mac:** open the `.dmg` and drag **Knitting Pattern Studio** into your **Applications** folder. The app isn't registered with Apple, so the first time you open it your Mac will say it can't check it for malicious software. Click **Done**, then go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the message about Knitting Pattern Studio. You only need to do this once.
+
+**On Windows:** double-click the `.msi` installer. If Windows says *"Windows protected your PC"*, click **More info**, then **Run anyway**. The program is added to the Start menu and the desktop. With the portable zip, unzip it anywhere and double-click **Knitting Pattern Studio.exe** inside.
+
+**On Linux:** install the package with `sudo apt install ./KnittingPatternStudio-…-linux-x64.deb` (or `sudo dnf install ./….rpm`). It appears in your applications menu under Graphics. With the `.tar.gz`, unpack it and run `bin/Knitting Pattern Studio`.
+
+Once installed, double-clicking a saved `.knit` pattern opens it in Knitting Pattern Studio.
+
+### Or run the single Java file
+
+If you'd rather not install an app, or you want the very latest version, you can run the program straight from its source file. You need two things: **Java** (a free program that runs Knitting Pattern Studio) and the file **`KnittingPattern.java`** from this page.
+
+#### 1. Install Java (once)
 
 1. Go to **[adoptium.net](https://adoptium.net)**.
 2. Click the big download button. It picks the right version for your computer.
@@ -38,11 +63,11 @@ You need two things: **Java** (a free program that runs Knitting Pattern Studio)
 
 Any version from **Java 17** upwards will work. If you already have Java, you can skip this step.
 
-### 2. Download the program
+#### 2. Download the program
 
 At the top of this page, click **`KnittingPattern.java`**, then the **download** button (the arrow pointing down, on the right). Save it somewhere easy to find, such as your **Documents** folder.
 
-### 3. Start it
+#### 3. Start it
 
 **On Windows**
 1. Open the folder containing `KnittingPattern.java`.
@@ -72,7 +97,7 @@ The window has three parts:
 
 | Left | Middle | Right |
 |---|---|---|
-| Your **list of patterns**, each with a small swatch of the fabric it knits. Click one to open it. | The **chart**. Hover over any square to see which row and stitch it is. | Four tabs: **Instructions**, **Row tracker**, **Size & yarn** and **Checks**. |
+| Your **list of patterns**, each with a small swatch of the fabric it knits. Click one to open it. Type in the **search box** to find one (*"rib"*, *"lace"*, *"hat"*), or pick a kind of pattern from the menu below it: colourwork, lace, cables, textures or your own. | The **chart**. Hover over any square to see which row and stitch it is. | Four tabs: **Instructions**, **Row tracker**, **Size & yarn** and **Checks**. |
 
 Above the chart:
 - **Repeats across / up** show the pattern repeated, so you can see how it tiles. Panels, such as a single cable, are shown once.
@@ -195,17 +220,24 @@ Untick **Stitch pictures** to see the standard symbols used in printed patterns,
 |---|---|---|
 | **Fair Isle Diamonds** | Two-colour stranded knitting, in the round | 12 stitches × 12 rounds |
 | **Houndstooth** | The classic broken check, in two colours, in the round | 4 stitches × 4 rounds |
+| **Chequerboard** | Bold two-colour squares, in the round | 8 stitches × 8 rounds |
+| **Norwegian Lice** | Tiny scattered dots of colour, from traditional Norwegian jumpers | 4 stitches × 4 rounds |
 | **Feather and Fan Lace** | The classic Shetland "Old Shale" lace | 18 stitches × 4 rows |
 | **Horseshoe Lace** | Traditional lace arches with a central double decrease | 10 stitches × 8 rows |
+| **Fishtail Lace** | Little V shapes stacked in columns: a gentle first lace | 8 stitches × 6 rows |
 | **Rope Cable (C8F)** | A bold cable panel | 12 stitches × 8 rows |
 | **Horseshoe Cable** | Two cables crossing away from each other | 12 stitches × 8 rows |
+| **Braid Cable** | Three strands plaited like a braid of hair | 13 stitches × 4 rows |
 | **Honeycomb Cable** | An all-over texture of interlocking cable cells | 8 stitches × 8 rows |
 | **Bobble Diamond** | An aran panel: travelling stitches form diamonds, each with a bobble | 13 stitches × 8 rows |
 | **Mini Cable Rib** | Rib with a tiny 2-stitch cable up each knit column | 4 stitches × 4 rows |
+| **Stocking Stitch** | The smooth, plain fabric of most jumpers (stockinette) | 2 stitches × 2 rows |
 | **Garter Stitch** | Knit every row: the first stitch everyone learns | 2 stitches × 2 rows |
+| **1×1 Rib** | Single rib, for cuffs, neckbands and cardigan edges | 2 stitches × 2 rows |
 | **2×2 Rib** | Stretchy ribbing for cuffs and brims | 4 stitches × 2 rows |
 | **Twisted Rib** | 1×1 rib with crisp, twisted knit stitches | 2 stitches × 2 rows |
 | **Seed (Moss) Stitch** | A flat, reversible bumpy texture | 2 stitches × 2 rows |
+| **Double Moss Stitch** | Little blocks of knit and purl (US: moss stitch) | 4 stitches × 4 rows |
 | **Basketweave** | Blocks of knit and purl, like a woven basket | 8 stitches × 8 rows |
 | **Heel Stitch** | Hard-wearing slipped-stitch fabric for sock heels | 2 stitches × 2 rows |
 
@@ -222,7 +254,9 @@ The built-in patterns can't be changed by accident. If you edit one, the program
    - **Stitch:** click a stitch, then click or drag across the chart to paint it.
    - **Cable:** click a cable or travelling stitch, then click the **leftmost** square of where it should go, and it fills the right number of squares.
    - **Yarn:** click a colour, then click or drag to paint that colour. **Right-click** a colour to rename it ("Heather grey") or choose its exact shade. **+ Yarn** adds another colour.
-   - **Undo** (or Ctrl+Z / ⌘+Z) takes back the last change. **Resize…** changes the size of the chart. **Details…** sets the name, a description, your own notes, and whether it's knitted in the round.
+   - **Undo** (Ctrl+Z, or ⌘Z on a Mac) takes back the last change, and **Redo** (Ctrl+Y, or ⇧⌘Z on a Mac) puts it back. **Resize…** changes the size of the chart. **Details…** sets the name, a description, your own notes, and whether it's knitted in the round.
+   - **Mirror** flips the whole chart left to right. It's not just a copy turned round: decreases, increases and cables are changed to lean the other way (a k2tog becomes an ssk, a C4F becomes a C4B), just as they would in a mirror image knitted for real.
+   - **Symmetrical** copies the left half of the chart onto the right half as its mirror image. Draw half a motif, click it, and the other half is done. If the motif's centre isn't in the middle of the chart, check the **Checks** tab afterwards.
 3. Watch the **Instructions** and **Checks** tabs update as you draw.
 4. Choose **File → Save as…** to keep it. Your patterns are saved as small `.knit` files that you can email to a friend. They open them with **Open…**.
 
@@ -282,6 +316,7 @@ To put it on your phone, export the web page, then email it to yourself, or save
 - `.knit` files are plain text: a few `key: value` lines, then the chart drawn with one character per stitch (`.` knit, `-` purl, `O` yarn over, `/` k2tog, `\` ssk, `^` sk2p, `L`/`R` make one, `V` slip 1, `T` k1tbl, `@` bobble, `C`/`D` C2F/C2B, `F`/`B` C4F/C4B, `G`/`H` C6F/C6B, `X`/`Y` C8F/C8B, `P`/`Q` T4F/T4B, `#` no stitch), and an optional block of yarn letters for colourwork. You can write or edit them in any text editor.
 - The pattern-list swatches and stitch pictures are drawn as vector shapes, so they stay sharp on high-resolution (Retina) screens.
 - `java KnittingPattern.java --site docs` builds the demo website: a home page plus a tracker page for every built-in pattern, ready for GitHub Pages. Run it in the folder with the screenshots so they're included.
+- **Building the apps.** `packaging/build-app.sh` (Mac and Linux) and `packaging/build-app.ps1` (Windows) use Java's `jpackage` to make a self-contained app with a trimmed-down Java runtime (only `java.base`, `java.desktop` and `java.prefs`). Each builds for the computer it runs on. The GitHub workflow in `.github/workflows/build-apps.yml` runs them on GitHub's Mac (Apple Silicon and Intel), Windows and Linux machines whenever a release is published, and attaches the results to the release. The version number comes from `VERSION` in `KnittingPattern.java`.
 - If no display is available, the program falls back to text mode automatically.
 
 ---

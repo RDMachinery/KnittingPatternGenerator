@@ -53,7 +53,7 @@ import java.util.prefs.Preferences;
 public class KnittingPattern {
 
     static final String APP_NAME = "Knitting Pattern Studio";
-    static final String VERSION = "2.1";
+    static final String VERSION = "2.2";
 
     // =======================================================================
     // Stitches
@@ -99,6 +99,20 @@ public class KnittingPattern {
 
         boolean isCable()       { return width > 1; }
         boolean frontCross()    { return isCable() && name().endsWith("F"); }
+        /** The same stitch seen in a mirror: left-leaning stitches lean right, front cables become back cables. */
+        Stitch mirror() {
+            return switch (this) {
+                case K2TOG -> SSK;  case SSK -> K2TOG;
+                case M1L -> M1R;    case M1R -> M1L;
+                case C2F -> C2B;    case C2B -> C2F;
+                case C4F -> C4B;    case C4B -> C4F;
+                case C6F -> C6B;    case C6B -> C6F;
+                case C8F -> C8B;    case C8B -> C8F;
+                case T4F -> T4B;    case T4B -> T4F;
+                default -> this;
+            };
+        }
+
         /** A travelling stitch: knit stitches crossing over purl ones, rather than knit over knit. */
         boolean travels()       { return isCable() && name().startsWith("T"); }
         boolean rightSideOnly() { return ws == null; }
@@ -194,9 +208,33 @@ public class KnittingPattern {
             return false;
         }
 
-        String summary() {
-            String kind = isColourwork() ? "colourwork" : hasCables() ? "cables" : uses(Stitch.YO) ? "lace" : "texture";
-            return width() + " × " + height() + " " + rowsWord() + " · " + kind + (panel ? " panel" : "");
+        /** colourwork, cables, lace or texture. */
+        String kind() { return isColourwork() ? "colourwork" : hasCables() ? "cables" : uses(Stitch.YO) ? "lace" : "texture"; }
+
+        String summary() { return width() + " × " + height() + " " + rowsWord() + " · " + kind() + (panel ? " panel" : ""); }
+
+        /** Flips the chart left to right, turning each stitch into its mirror image. */
+        void mirror() {
+            int w = width();
+            for (int r = 0; r < height(); r++) {
+                Stitch[] nc = new Stitch[w];
+                int[] ncol = new int[w];
+                for (int c = 0; c < w; c++) { nc[w - 1 - c] = cells[r][c].mirror(); ncol[w - 1 - c] = colours[r][c]; }
+                cells[r] = nc; colours[r] = ncol;
+            }
+        }
+
+        /**
+         * Copies the left half of every row onto the right half as its mirror image, so the chart is
+         * symmetrical. With an odd width the centre column is left as it is.
+         */
+        void makeSymmetrical() {
+            int w = width();
+            for (int r = 0; r < height(); r++)
+                for (int c = 0; c < w / 2; c++) {
+                    cells[r][w - 1 - c] = cells[r][c].mirror();
+                    colours[r][w - 1 - c] = colours[r][c];
+                }
         }
 
         Chart copy() {
@@ -237,9 +275,12 @@ public class KnittingPattern {
     static final class BuiltIns {
 
         static List<Chart> all() {
-            return new ArrayList<>(List.of(fairIsle(), houndstooth(), featherAndFan(), horseshoeLace(), ropeCable(), horseshoeCable(),
-                    honeycombCable(), bobbleDiamond(), miniCableRib(), garterStitch(), rib2x2(), twistedRib(), seedStitch(),
-                    basketweave(), heelStitch()));
+            return new ArrayList<>(List.of(
+                    fairIsle(), houndstooth(), chequerboard(), norwegianLice(),                       // colourwork
+                    featherAndFan(), horseshoeLace(), fishtailLace(),                                 // lace
+                    ropeCable(), horseshoeCable(), braidCable(), honeycombCable(), bobbleDiamond(), miniCableRib(),   // cables
+                    stockingStitch(), garterStitch(), rib1x1(), rib2x2(), twistedRib(), seedStitch(), doubleMoss(),
+                    basketweave(), heelStitch()));                                                    // textures
         }
 
         /** Builds a chart from rows written top-down, exactly as the chart looks on paper. */
@@ -431,6 +472,87 @@ public class KnittingPattern {
             c.notes = "Knit every row. The chart shows the wrong-side rows as purl bumps because that's how they look from the right side.\n"
                     + "Each ridge is two rows, so count ridges instead of rows to keep track.\n"
                     + "Garter stitch is wider and shorter than stocking stitch at the same gauge, so swatch it in garter.";
+            return c;
+        }
+
+        static Chart chequerboard() {
+            String a = "AAAABBBB", b = "BBBBAAAA";
+            Chart c = build("Chequerboard", true, false, repeatRow("........", 8), new String[] { b, b, b, b, a, a, a, a },
+                    new Yarn("A", "Oatmeal", new Color(0xE8DCC4)), new Yarn("B", "Forest green", new Color(0x2F5D46)));
+            c.description = "Bold two-colour squares, like a chessboard. Simple to knit and very striking on hats, "
+                          + "cushions and bags.";
+            c.notes = "Knitted in the round: every round is read from right to left.\n"
+                    + "Each colour is carried across 4 stitches at most, so the floats stay short.\n"
+                    + "Swap the colours every 4 rounds, with the blocks moving over by 4 stitches.";
+            return c;
+        }
+
+        static Chart norwegianLice() {
+            Chart c = build("Norwegian Lice", true, false, repeatRow("....", 4), new String[] { "AAAA", "AABA", "AAAA", "BAAA" },
+                    new Yarn("A", "Red", new Color(0xA8322D)), new Yarn("B", "White", new Color(0xF6F1E7)));
+            c.description = "Tiny scattered dots of colour, called \"lus\" (lice) in Norway, from traditional Setesdal jumpers. "
+                          + "An easy, relaxing introduction to two-colour knitting.";
+            c.notes = "Knitted in the round: every round is read from right to left.\n"
+                    + "On the rounds with no dots, leave the second colour hanging at the start of the round until you need it.\n"
+                    + "Lice is often used for the body and sleeves of a jumper, below a bolder yoke pattern.";
+            return c;
+        }
+
+        static Chart fishtailLace() {
+            Chart c = build("Fishtail Lace", false, false, new String[] {
+                    "........",   // row 6 (WS): purl
+                    "...O^O..",   // row 5 (RS)
+                    "........",   // row 4 (WS): purl
+                    "..O.^.O.",   // row 3 (RS)
+                    "........",   // row 2 (WS): purl
+                    ".O..^..O",   // row 1 (RS)
+            }, null);
+            c.description = "Little V shapes like the tails of fish, stacked in columns. A gentle first lace pattern, "
+                          + "with every wrong-side row purled.";
+            c.notes = "Each right-side row is balanced: two yarn overs make up for the two stitches lost in the SK2P.\n"
+                    + "For a symmetrical edge, cast on a multiple of 8 plus 1, and knit the extra stitch at the start of each right-side row.\n"
+                    + "Lovely for scarves, wraps and summer tops in a smooth cotton or linen yarn.";
+            return c;
+        }
+
+        static Chart braidCable() {
+            Chart c = build("Braid Cable", false, true, new String[] {
+                    "--.........--",   // row 4 (WS)
+                    "--GGGGGG...--",   // row 3 (RS): k3, C6F
+                    "--.........--",   // row 2 (WS)
+                    "--...HHHHHH--",   // row 1 (RS): C6B, k3
+            }, null);
+            c.description = "Three strands plaited like a braid of hair. A classic aran cable that looks far harder than it is.";
+            c.notes = "This is a panel: work its 13 stitches wherever you want the braid, with a stitch marker each side.\n"
+                    + "The two crossings take turns: C6B on the right-hand 6 stitches, then C6F on the left-hand 6.\n"
+                    + "Keep the crossings firm, and the braid stands out beautifully against the purl stitches each side.";
+            return c;
+        }
+
+        static Chart stockingStitch() {
+            Chart c = build("Stocking Stitch", false, false, new String[] { "..", ".." }, null);
+            c.description = "Smooth Vs on the right side and bumps on the back: the plain fabric of most jumpers. "
+                          + "Called stockinette in the US.";
+            c.notes = "Knit the right-side rows and purl the wrong-side rows. In the round, knit every round.\n"
+                    + "The edges curl, so add a border of rib, garter or moss stitch if you want it to lie flat.";
+            return c;
+        }
+
+        static Chart rib1x1() {
+            Chart c = build("1×1 Rib", false, false, new String[] { "-.", "-." }, null);
+            c.description = "Single rib: one knit, one purl. Very stretchy and neat, for cuffs, neckbands and the edges of cardigans.";
+            c.notes = "Knit the knits and purl the purls as they face you.\n"
+                    + "Use a needle about half a size to one size smaller than for the main fabric.\n"
+                    + "For matching edges, cast on an odd number of stitches and finish every right-side row with k1.";
+            return c;
+        }
+
+        static Chart doubleMoss() {
+            Chart c = build("Double Moss Stitch", false, false, new String[] { "..--", "..--", "--..", "--.." }, null);
+            c.description = "Little blocks of knit and purl in a chequerboard. A thick, flat, reversible texture "
+                          + "(called moss stitch in the US).";
+            c.notes = "Work 2 rows of k2, p2 rib, then 2 rows with the knits and purls swapped.\n"
+                    + "It lies flat and looks the same on both sides, so it's a good choice for scarves and blankets.";
             return c;
         }
 
@@ -1954,6 +2076,93 @@ public class KnittingPattern {
     }
 
     // =======================================================================
+    // Fitting in with the operating system (most of it matters on a Mac)
+    // =======================================================================
+
+    /**
+     * Opening .knit files from Finder, and the Mac app menu's About and Quit. Files can arrive
+     * before the window exists (when the program is started by double-clicking a pattern), so
+     * they wait until it does.
+     */
+    static final class SystemIntegration {
+        static final List<Path> pending = new ArrayList<>();
+        static StudioFrame frame;
+
+        static void install() {
+            try {
+                if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE))
+                    Taskbar.getTaskbar().setIconImage(AppIcon.image(512));
+            } catch (RuntimeException ignored) { }
+            if (!Desktop.isDesktopSupported()) return;
+            Desktop d = Desktop.getDesktop();
+            try {
+                if (d.isSupported(Desktop.Action.APP_OPEN_FILE))
+                    d.setOpenFileHandler(e -> SwingUtilities.invokeLater(() -> {
+                        for (File f : e.getFiles()) {
+                            if (frame != null) frame.openPath(f.toPath());
+                            else pending.add(f.toPath());
+                        }
+                    }));
+                if (d.isSupported(Desktop.Action.APP_QUIT_HANDLER))
+                    d.setQuitHandler((e, response) -> {
+                        // quit() only returns if the person chose not to lose unsaved changes.
+                        if (frame != null) frame.quit();
+                        else System.exit(0);
+                        response.cancelQuit();
+                    });
+                if (d.isSupported(Desktop.Action.APP_ABOUT))
+                    d.setAboutHandler(e -> { if (frame != null) frame.about(); });
+            } catch (RuntimeException ignored) { }   // not available here: the menus still work
+        }
+
+        static void attach(StudioFrame f) {
+            frame = f;
+            for (Path p : pending) f.openPath(p);
+            pending.clear();
+        }
+    }
+
+    // =======================================================================
+    // App icon
+    // =======================================================================
+
+    /** The program's icon, drawn rather than stored: knitted fabric with a little colourwork diamond. */
+    static final class AppIcon {
+        static final Color BACK = new Color(0x7A3E2E), CREAM = new Color(0xF3EAD7), NAVY = new Color(0x1F3A68);
+
+        static BufferedImage image(int size) {
+            BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+            Renderer.smooth(g);
+            double m = size * 0.06, w = size - 2 * m;          // margin, as macOS icons have
+            Shape tile = new RoundRectangle2D.Double(m, m, w, w, w * 0.23, w * 0.23);
+            g.setColor(BACK);
+            g.fill(tile);
+            g.clip(tile);
+            // A 5 x 5 patch of knit stitches, with a navy diamond in the middle.
+            int n = 5;
+            double cell = w * 0.84 / n, ox = m + (w - n * cell) / 2, oy = m + (w - n * cell) / 2 + cell * 0.04;
+            float line = (float) Math.max(0.6, cell / 18);
+            for (int r = 0; r < n; r++)
+                for (int c = 0; c < n; c++) {
+                    boolean diamond = Math.abs(r - 2) + Math.abs(c - 2) <= 1;
+                    Color body = diamond ? NAVY : CREAM, edge = diamond ? NAVY.darker() : new Color(0xC9B9A2);
+                    double x = ox + c * cell, cx = x + cell / 2, base = oy + r * cell + cell * 0.95;
+                    Renderer.petal(g, cx, base, cell * 0.86, cell * 0.36, -24, body, edge, line);
+                    Renderer.petal(g, cx, base, cell * 0.86, cell * 0.36, 24, body, edge, line);
+                }
+            g.dispose();
+            return img;
+        }
+
+        static List<Image> sizes() {
+            List<Image> out = new ArrayList<>();
+            for (int s : new int[] { 16, 24, 32, 48, 64, 128, 256 }) out.add(image(s));
+            return out;
+        }
+    }
+
+    // =======================================================================
     // Demo website (java KnittingPattern.java --site docs)
     // =======================================================================
 
@@ -1996,7 +2205,7 @@ public class KnittingPattern {
                      .append(".png' width='72' height='72' alt=''><span><b>").append(Html.esc(c.name)).append("</b><small>")
                      .append(Html.esc(c.summary())).append("</small>").append(Html.esc(desc)).append("</span></a>\n");
             }
-            Files.writeString(dir.resolve("index.html"), home(cards.toString(), shot, phone), StandardCharsets.UTF_8);
+            Files.writeString(dir.resolve("index.html"), home(cards.toString(), shot, phone, charts.size()), StandardCharsets.UTF_8);
         }
 
         static boolean copyIfPresent(String name, Path images) throws IOException {
@@ -2033,7 +2242,7 @@ public class KnittingPattern {
                     .replaceFirst("<body>", "<body>" + nav);
         }
 
-        static String home(String cards, boolean shot, boolean phone) {
+        static String home(String cards, boolean shot, boolean phone, int count) {
             return """
                 <!DOCTYPE html>
                 <html lang="en"><head><meta charset="utf-8">
@@ -2048,6 +2257,7 @@ public class KnittingPattern {
                 header p{margin:.6rem auto 1.4rem;font-size:1.25rem;max-width:640px;opacity:.95}
                 .btn{display:inline-block;margin:.3rem;padding:.8rem 1.3rem;border-radius:999px;font:bold 1rem sans-serif;text-decoration:none}
                 .btn.light{background:#FFF8F0;color:#7A3E2E}.btn.line{border:2px solid #FFF8F0;color:#FFF8F0}
+                .btn.get{background:#7A3E2E;color:#FFF8F0;margin:0}
                 h2{color:#7A3E2E;font-size:1.7rem;margin:2.6rem 0 .6rem}
                 .lead{font-size:1.15rem}
                 .shot{max-width:100%%;border:1px solid #E6DED4;border-radius:8px;box-shadow:0 6px 24px rgba(60,40,30,.12)}
@@ -2071,7 +2281,7 @@ public class KnittingPattern {
                   <p>Design, view and follow knitting charts, free. Every chart comes with written row-by-row instructions,
                   and a tracker that follows you stitch by stitch.</p>
                   <a class="btn light" href="#patterns">Try a pattern in your browser</a>
-                  <a class="btn line" href="%2$s#getting-started">Download the program</a>
+                  <a class="btn line" href="%2$s/releases/latest">Download the app</a>
                 </header>
                 <main>
                   <h2>Charts and instructions that always agree</h2>
@@ -2090,7 +2300,7 @@ public class KnittingPattern {
                     your own designs.</p>
                   </div></div>
                   <h2 id="patterns">Try a pattern</h2>
-                  <p>Fifteen patterns come with the program, from garter stitch to a bobble-and-cable aran panel.
+                  <p>%6$s patterns come with the program, from garter stitch to a bobble-and-cable aran panel.
                   Pick one to see its chart, key and instructions, and follow it with the tracker.</p>
                   <div class="grid">
                 %5$s  </div>
@@ -2105,12 +2315,11 @@ public class KnittingPattern {
                     <li><b>Print and share:</b> print the pattern, or save it as a web page, a picture or plain text.</li>
                   </ul>
                   <h2>Get the program</h2>
-                  <p>It's one file that runs on a Mac, Windows or Linux computer, using Java (which is also free).</p>
-                  <ol>
-                    <li>Install Java from <a href="https://adoptium.net">adoptium.net</a> (once).</li>
-                    <li>Download <b>KnittingPattern.java</b> from the <a href="%2$s">project page</a>.</li>
-                    <li>Start it, following the <a href="%2$s#getting-started">step-by-step instructions</a>.</li>
-                  </ol>
+                  <p>Knitting Pattern Studio is free for Mac (Apple Silicon and Intel), Windows and Linux. Everything it needs
+                  is included, so there's nothing else to install.</p>
+                  <p><a class="btn get" href="%2$s/releases/latest">Download the app</a></p>
+                  <p>The <a href="%2$s#getting-started">step-by-step instructions</a> show which file to choose and how to open it
+                  the first time.</p>
                   <footer>
                     <p>Copyright Mario Gianota 2026. All rights reserved. Free to download and use for personal knitting,
                     but not to copy, change or redistribute without permission.</p>
@@ -2122,7 +2331,7 @@ public class KnittingPattern {
                     shot ? "<p><img class=\"shot\" src=\"images/fair-isle.png\" alt=\"The Fair Isle Diamonds pattern in "
                            + Html.esc(APP_NAME) + "\"></p>" : "",
                     phone ? "<img src=\"images/web-tracker.png\" alt=\"The row tracker on a phone\">" : "",
-                    cards);
+                    cards, count);
         }
     }
 
@@ -2899,10 +3108,32 @@ public class KnittingPattern {
         }
     }
 
+    /** A text field that shows a grey hint while it's empty. */
+    static final class HintField extends JTextField {
+        final String hint;
+        HintField(String hint) { this.hint = hint; }
+        @Override protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (!getText().isEmpty()) return;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setColor(new Color(0x9A918A));
+            Insets in = getInsets();
+            g2.drawString(hint, in.left + 2, (getHeight() + g2.getFontMetrics().getAscent() - g2.getFontMetrics().getDescent()) / 2);
+            g2.dispose();
+        }
+    }
+
     /** The main window. */
     static final class StudioFrame extends JFrame {
+        /** Every open pattern; {@code model} holds the ones that match the search. */
+        final List<Chart> all = new ArrayList<>();
         final DefaultListModel<Chart> model = new DefaultListModel<>();
         final JList<Chart> list = new JList<>(model);
+        final JTextField search = new HintField("Search patterns");
+        final JComboBox<String> category = new JComboBox<>(new String[] {
+                "All patterns", "Colourwork", "Lace", "Cables", "Textures", "My patterns" });
+        final JLabel listTitle = new JLabel("Patterns");
         final ChartPanel chartPanel = new ChartPanel();
         final InstructionsPanel instructions = new InstructionsPanel();
         final ChecksPanel checks = new ChecksPanel();
@@ -2919,7 +3150,8 @@ public class KnittingPattern {
         final JCheckBoxMenuItem editItem = new JCheckBoxMenuItem("Edit chart");
         final EditBar editBar = new EditBar();
         final JLabel status = new JLabel(" ");
-        final Deque<Chart> undo = new ArrayDeque<>();
+        final Deque<Chart> undo = new ArrayDeque<>(), redo = new ArrayDeque<>();
+        static final boolean IS_MAC = System.getProperty("os.name", "").toLowerCase().contains("mac");
         JScrollPane chartScroll;
         static final int TRACKER_TAB = 1, CHECKS_TAB = 3;
         Chart current;
@@ -2934,7 +3166,7 @@ public class KnittingPattern {
                 @Override public void windowIconified(WindowEvent e)   { tracker.setInUse(false); }
                 @Override public void windowDeiconified(WindowEvent e) { tracker.setInUse(trackerInUse()); }
             });
-            charts.forEach(model::addElement);
+            all.addAll(charts);
 
             tracker = new TrackerPanel((r, st) -> {
                 boolean on = tabs.getSelectedIndex() == TRACKER_TAB;
@@ -2966,9 +3198,26 @@ public class KnittingPattern {
             list.addListSelectionListener(e -> {
                 if (!e.getValueIsAdjusting() && list.getSelectedValue() != null && list.getSelectedValue() != current) show(list.getSelectedValue());
             });
-            JLabel listTitle = new JLabel("Patterns");
             listTitle.setFont(listTitle.getFont().deriveFont(Font.BOLD, 15f));
-            listTitle.setBorder(new EmptyBorder(10, 10, 6, 10));
+            listTitle.setBorder(new EmptyBorder(10, 2, 6, 2));
+            search.setToolTipText("Type part of a name or description, such as \"rib\", \"lace\" or \"hat\". Esc clears it.");
+            search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                public void insertUpdate(javax.swing.event.DocumentEvent e)  { refilter(); }
+                public void removeUpdate(javax.swing.event.DocumentEvent e)  { refilter(); }
+                public void changedUpdate(javax.swing.event.DocumentEvent e) { refilter(); }
+            });
+            search.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "clearSearch");
+            search.getActionMap().put("clearSearch", new AbstractAction() {
+                @Override public void actionPerformed(ActionEvent e) { search.setText(""); }
+            });
+            category.setToolTipText("Show only one kind of pattern.");
+            category.addActionListener(e -> refilter());
+            JPanel finder = new JPanel(new BorderLayout(0, 6));
+            finder.setBorder(new EmptyBorder(0, 8, 8, 8));
+            finder.setOpaque(false);
+            finder.add(listTitle, BorderLayout.NORTH);
+            finder.add(search, BorderLayout.CENTER);
+            finder.add(category, BorderLayout.SOUTH);
             JButton newB = new JButton("New…"), openB = new JButton("Open…");
             newB.addActionListener(e -> newPattern());
             openB.addActionListener(e -> open());
@@ -2976,7 +3225,7 @@ public class KnittingPattern {
             listButtons.setBorder(new EmptyBorder(6, 8, 8, 8));
             listButtons.add(newB); listButtons.add(openB);
             JPanel left = new JPanel(new BorderLayout());
-            left.add(listTitle, BorderLayout.NORTH);
+            left.add(finder, BorderLayout.NORTH);
             left.add(new JScrollPane(list, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                     ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
             left.add(listButtons, BorderLayout.SOUTH);
@@ -3062,9 +3311,11 @@ public class KnittingPattern {
             setJMenuBar(menus());
 
             setPictures(pictureBox.isSelected());
+            setIconImages(AppIcon.sizes());
             setSize(1440, 860);
             setLocationRelativeTo(null);
-            list.setSelectedValue(initial != null ? initial : model.get(0), true);
+            refilter();
+            list.setSelectedValue(initial != null ? initial : all.get(0), true);
         }
 
         // ---- menus --------------------------------------------------------
@@ -3090,6 +3341,16 @@ public class KnittingPattern {
             editItem.addActionListener(e -> setEditing(editItem.isSelected()));
             edit.add(editItem);
             edit.add(item("Undo", KeyStroke.getKeyStroke(KeyEvent.VK_Z, mod), this::undo));
+            edit.add(item("Redo", KeyStroke.getKeyStroke(KeyEvent.VK_Z, mod | InputEvent.SHIFT_DOWN_MASK), this::redo));
+            if (!IS_MAC) {   // Ctrl+Y is the usual redo on Windows and Linux too
+                getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, mod), "redo");
+                getRootPane().getActionMap().put("redo", new AbstractAction() {
+                    @Override public void actionPerformed(ActionEvent e) { redo(); }
+                });
+            }
+            edit.addSeparator();
+            edit.add(item("Mirror chart left to right", null, this::mirrorChart));
+            edit.add(item("Make symmetrical (copy left half to right)", null, this::makeSymmetrical));
             edit.addSeparator();
             edit.add(item("Pattern details…", null, this::details));
             edit.add(item("Resize chart…", null, this::resizeChart));
@@ -3099,13 +3360,60 @@ public class KnittingPattern {
 
             JMenu help = new JMenu("Help");
             help.add(item("How to read a chart", null, this::howToRead));
-            help.add(item("About", null, () -> JOptionPane.showMessageDialog(this,
+            help.add(item("About", null, this::about));
+            bar.add(file); bar.add(edit); bar.add(help);
+            return bar;
+        }
+
+        /** Adds a pattern to the list and shows it, clearing the search if it would hide it. */
+        void addPattern(Chart c) {
+            all.add(c);
+            if (!matches(c)) { search.setText(""); category.setSelectedIndex(0); }
+            refilter();
+            list.setSelectedValue(c, true);
+        }
+
+        boolean matches(Chart c) {
+            String q = search.getText().trim().toLowerCase();
+            boolean kindOk = switch (category.getSelectedIndex()) {
+                case 1 -> c.kind().equals("colourwork");
+                case 2 -> c.kind().equals("lace");
+                case 3 -> c.kind().equals("cables");
+                case 4 -> c.kind().equals("texture");
+                case 5 -> !c.builtIn;
+                default -> true;
+            };
+            if (!kindOk) return false;
+            if (q.isEmpty()) return true;
+            String hay = (c.name + " " + c.description + " " + c.kind() + (c.panel ? " panel" : "")
+                       + (c.inTheRound ? " in the round" : "")).toLowerCase();
+            // Every word typed must begin a word in the pattern's name or description:
+            // "round" finds "in the round" but not "background".
+            List<String> words = Arrays.asList(hay.split("[^\\p{L}\\p{N}]+"));
+            for (String typed : q.split("[^\\p{L}\\p{N}]+")) {
+                if (typed.isEmpty()) continue;
+                if (words.stream().noneMatch(w -> w.startsWith(typed))) return false;
+            }
+            return true;
+        }
+
+        /** Shows the patterns that match the search box and the category. */
+        void refilter() {
+            List<Chart> shown = new ArrayList<>();
+            for (Chart c : all) if (matches(c)) shown.add(c);
+            model.clear();
+            shown.forEach(model::addElement);
+            if (current != null && shown.contains(current)) list.setSelectedValue(current, true);
+            listTitle.setText(shown.size() == all.size() ? "Patterns (" + all.size() + ")"
+                    : shown.isEmpty() ? "No patterns match" : "Patterns: " + shown.size() + " of " + all.size());
+        }
+
+        void about() {
+            JOptionPane.showMessageDialog(this,
                     APP_NAME + " " + VERSION + "\nDesign, view and follow knitting charts.\n\n"
                     + "Copyright Mario Gianota 2026. All Rights Reserved.\n"
                     + "Feature requests, bugs and suggestions to mariogianota@protonmail.com.", "About",
-                    JOptionPane.INFORMATION_MESSAGE)));
-            bar.add(file); bar.add(edit); bar.add(help);
-            return bar;
+                    JOptionPane.INFORMATION_MESSAGE, new ImageIcon(AppIcon.image(64)));
         }
 
         JMenuItem item(String text, KeyStroke key, Runnable action) {
@@ -3138,6 +3446,7 @@ public class KnittingPattern {
         void show(Chart c) {
             current = c;
             undo.clear();
+            redo.clear();
             if (!keepEditing) setEditing(false);
             across.setEnabled(!c.panel);
             chartPanel.chart = c;
@@ -3180,7 +3489,7 @@ public class KnittingPattern {
             Chart copy = current.copy();
             copy.builtIn = false;
             copy.name = current.name + " (my copy)";
-            model.addElement(copy);
+            addPattern(copy);
             keepEditing = true;
             list.setSelectedValue(copy, true);
             keepEditing = false;
@@ -3194,12 +3503,14 @@ public class KnittingPattern {
             editBar.setVisible(on);
             chartPanel.editing = on;
             chartPanel.setCursor(on ? Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR) : Cursor.getDefaultCursor());
-            if (on) say("Editing: pick a stitch or a yarn above, then click or drag on the chart. Ctrl+Z undoes.");
+            if (on) say("Editing: pick a stitch or a yarn above, then click or drag on the chart. "
+                    + (IS_MAC ? "⌘Z undoes and ⇧⌘Z redoes." : "Ctrl+Z undoes and Ctrl+Y redoes."));
         }
 
         void snapshot() {
             undo.push(current.copy());
             while (undo.size() > 100) undo.removeLast();
+            redo.clear();
         }
 
         void changed() {
@@ -3209,9 +3520,39 @@ public class KnittingPattern {
 
         void undo() {
             if (undo.isEmpty()) { Toolkit.getDefaultToolkit().beep(); return; }
+            redo.push(current.copy());
             current.restoreFrom(undo.pop());
             editBar.rebuildYarns();
             changed();
+        }
+
+        void redo() {
+            if (redo.isEmpty()) { Toolkit.getDefaultToolkit().beep(); return; }
+            undo.push(current.copy());
+            current.restoreFrom(redo.pop());
+            editBar.rebuildYarns();
+            changed();
+        }
+
+        /** Flips the chart left to right. Leaning stitches and cables are turned to lean the other way. */
+        void mirrorChart() {
+            if (current == null) return;
+            ensureEditable();
+            snapshot();
+            current.mirror();
+            changed();
+            say("Mirrored the chart: decreases, increases and cables now lean the other way.");
+        }
+
+        void makeSymmetrical() {
+            if (current == null) return;
+            ensureEditable();
+            snapshot();
+            current.makeSymmetrical();
+            changed();
+            say(Checks.run(current).isEmpty()
+                    ? "Copied the left half onto the right as a mirror image."
+                    : "Copied the left half onto the right. Some checks need attention: see the Checks tab.");
         }
 
         void paintCell(int[] cell, boolean newStroke) {
@@ -3287,17 +3628,27 @@ public class KnittingPattern {
                 actions.add(new JLabel(" Yarn "));
                 yarnBox.setOpaque(false);
                 actions.add(yarnBox);
-                JButton addYarn = new JButton("+ Yarn"), undoB = new JButton("↶ Undo"),
+                JButton addYarn = new JButton("+ Yarn"), undoB = new JButton("↶ Undo"), redoB = new JButton("↷ Redo"),
+                        mirrorB = new JButton("⇋ Mirror"), symB = new JButton("Symmetrical"),
                         resize = new JButton("Resize…"), details = new JButton("Details…");
+                redoB.addActionListener(e -> redo());
+                mirrorB.setToolTipText("Flip the chart left to right. Decreases, increases and cables are turned to lean the other way.");
+                mirrorB.addActionListener(e -> mirrorChart());
+                symB.setToolTipText("Copy the left half of the chart onto the right half as its mirror image. "
+                        + "Draw half a motif, then click this.");
+                symB.addActionListener(e -> makeSymmetrical());
                 addYarn.setToolTipText("Add another colour (makes this a colourwork chart).");
                 addYarn.addActionListener(e -> addYarn());
                 undoB.addActionListener(e -> undo());
                 resize.addActionListener(e -> resizeChart());
                 details.addActionListener(e -> details());
-                for (JButton b : new JButton[] { addYarn, undoB, resize, details }) b.setFocusable(false);
+                for (JButton b : new JButton[] { addYarn, undoB, redoB, mirrorB, symB, resize, details }) b.setFocusable(false);
                 actions.add(addYarn);
                 actions.addSeparator();
                 actions.add(undoB);
+                actions.add(redoB);
+                actions.add(mirrorB);
+                actions.add(symB);
                 actions.add(resize);
                 actions.add(details);
                 add(stitches);
@@ -3380,8 +3731,7 @@ public class KnittingPattern {
             c.yarns.clear();
             for (int i = 0; i < (int) yarns.getValue(); i++) c.yarns.add(DEFAULT_YARNS[i]);
             c.dirty = true;
-            model.addElement(c);
-            list.setSelectedValue(c, true);
+            addPattern(c);
             setEditing(true);
         }
 
@@ -3440,17 +3790,18 @@ public class KnittingPattern {
             c.builtIn = false;
             c.dirty = true;
             c.name = current.name + " (copy)";
-            model.addElement(c);
-            list.setSelectedValue(c, true);
+            addPattern(c);
         }
 
         void remove() {
-            if (model.size() <= 1) return;
+            if (all.size() <= 1) return;
             if (current.dirty && JOptionPane.showConfirmDialog(this, "“" + current.name + "” has unsaved changes. Remove it anyway?",
                     "Remove pattern", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
-            int i = model.indexOf(current);
-            model.remove(i);
-            list.setSelectedIndex(Math.max(0, i - 1));
+            int i = Math.max(0, model.indexOf(current));
+            all.remove(current);
+            refilter();
+            if (model.isEmpty()) { search.setText(""); category.setSelectedIndex(0); }
+            list.setSelectedIndex(Math.max(0, Math.min(i - 1, model.size() - 1)));
         }
 
         // ---- files ------------------------------------------------------------
@@ -3477,11 +3828,15 @@ public class KnittingPattern {
             JFileChooser fc = chooser("knit", "Knitting patterns (*.knit)");
             if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
             lastDir = fc.getSelectedFile().getParentFile();
+            openPath(fc.getSelectedFile().toPath());
+        }
+
+        /** Opens a pattern file: from Open…, or a .knit file double-clicked in Finder or Explorer. */
+        void openPath(Path p) {
             try {
-                Chart c = ChartIO.load(fc.getSelectedFile().toPath());
-                model.addElement(c);
-                list.setSelectedValue(c, true);
-                say("Opened " + fc.getSelectedFile().getName());
+                Chart c = ChartIO.load(p);
+                addPattern(c);
+                say("Opened " + p.getFileName());
             } catch (IOException | IllegalArgumentException ex) {
                 error("Couldn't open that pattern", ex);
             }
@@ -3553,7 +3908,7 @@ public class KnittingPattern {
 
         void quit() {
             List<String> unsaved = new ArrayList<>();
-            for (int i = 0; i < model.size(); i++) if (model.get(i).dirty) unsaved.add(model.get(i).name);
+            for (Chart c : all) if (c.dirty) unsaved.add(c.name);
             if (!unsaved.isEmpty() && JOptionPane.showConfirmDialog(this,
                     "These patterns have changes that aren't saved:\n  " + String.join("\n  ", unsaved) + "\n\nQuit anyway?",
                     "Unsaved changes", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) return;
@@ -3668,6 +4023,9 @@ public class KnittingPattern {
         }
 
         Chart first = opened;
+        System.setProperty("apple.laf.useScreenMenuBar", "true");   // Mac: menus at the top of the screen
+        System.setProperty("apple.awt.application.name", APP_NAME);
+        SystemIntegration.install();
         SwingUtilities.invokeLater(() -> {
             try {
                 String os = System.getProperty("os.name").toLowerCase();
@@ -3675,7 +4033,9 @@ public class KnittingPattern {
                 else for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels())
                     if (info.getName().equals("Nimbus")) UIManager.setLookAndFeel(info.getClassName());
             } catch (ReflectiveOperationException | UnsupportedLookAndFeelException ignored) { }
-            new StudioFrame(charts, first).setVisible(true);
+            StudioFrame frame = new StudioFrame(charts, first);
+            frame.setVisible(true);
+            SystemIntegration.attach(frame);
         });
     }
 }
