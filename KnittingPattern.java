@@ -276,11 +276,17 @@ public class KnittingPattern {
 
         static List<Chart> all() {
             return new ArrayList<>(List.of(
-                    fairIsle(), houndstooth(), chequerboard(), norwegianLice(),                       // colourwork
-                    featherAndFan(), horseshoeLace(), fishtailLace(),                                 // lace
-                    ropeCable(), horseshoeCable(), braidCable(), honeycombCable(), bobbleDiamond(), miniCableRib(),   // cables
-                    stockingStitch(), garterStitch(), rib1x1(), rib2x2(), twistedRib(), seedStitch(), doubleMoss(),
-                    basketweave(), heelStitch()));                                                    // textures
+                    // colourwork
+                    fairIsle(), nordicStar(), snowflake(), oxoPeerie(), christmasTrees(), littleStars(), hearts(),
+                    houndstooth(), zigzag(), diamondLattice(), chequerboard(), polkaDots(), gingham(), norwegianLice(),
+                    birdsEye(), bretonStripes(),
+                    // lace
+                    featherAndFan(), horseshoeLace(), fishtailLace(), eyeletRows(), diagonalEyelets(),
+                    // cables
+                    ropeCable(), horseshoeCable(), braidCable(), waveCable(), honeycombCable(), bobbleDiamond(), miniCableRib(),
+                    // textures
+                    stockingStitch(), garterStitch(), rib1x1(), rib2x2(), twistedRib(), eyeletRib(), brokenRib(), diagonalRib(),
+                    seedStitch(), doubleMoss(), basketweave(), diamondBrocade(), littleBobbles(), heelStitch()));
         }
 
         /** Builds a chart from rows written top-down, exactly as the chart looks on paper. */
@@ -472,6 +478,318 @@ public class KnittingPattern {
             c.notes = "Knit every row. The chart shows the wrong-side rows as purl bumps because that's how they look from the right side.\n"
                     + "Each ridge is two rows, so count ridges instead of rows to keep track.\n"
                     + "Garter stitch is wider and shorter than stocking stitch at the same gauge, so swatch it in garter.";
+            return c;
+        }
+
+        static Chart nordicStar() {
+            String[] colours = {
+                    "BAAABAABABAABAAA",
+                    "BAAAAABBABBAAAAA",
+                    "BAAABBBABABBBAAA",
+                    "BBABABBBABBBABAB",
+                    "AAABBABBABBABBAA",
+                    "AABBBBABABABBBBA",
+                    "ABBABBBABABBBABB",
+                    "BAABAAABBBAAABAA",
+                    "ABBABBBABABBBABB",
+                    "AABBBBABABABBBBA",
+                    "AAABBABBABBABBAA",
+                    "BBABABBBABBBABAB",
+                    "BAAABBBABABBBAAA",
+                    "BAAAAABBABBAAAAA",
+                    "BAAABAABABAABAAA",
+                    "BBBABAAABAAABABB" };
+            Chart c = build("Nordic Star", true, false, repeatRow("................", 16), colours,
+                    new Yarn("A", "Natural white", new Color(0xF6F1E7)), new Yarn("B", "Black", new Color(0x2A2A2E)));
+            c.description = "An eight-pointed star in the Selbu tradition, the best-known motif in Norwegian knitting, with small stitches scattered between the stars.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nTraditionally worked in black and white, on mittens, hats and the yokes of jumpers.\nThe background is sprinkled with single stitches so that no float is longer than 5 stitches.";
+            return c;
+        }
+
+        static Chart snowflake() {
+            String[] colours = {
+                    "AAAAAAAAAA",
+                    "AAAAAAAAAA",
+                    "AAAABAAAAB",
+                    "AABABABAAA",
+                    "AAABBBAAAB",
+                    "ABBBABBBAA",
+                    "AAABBBAAAB",
+                    "AABABABAAA",
+                    "AAAABAAAAB",
+                    "AAAAAAAAAA" };
+            Chart c = build("Snowflake", true, false, repeatRow("..........", 10), colours,
+                    new Yarn("A", "Navy", new Color(0x1F3A68)), new Yarn("B", "White", new Color(0xF6F1E7)));
+            c.description = "Crisp white snowflakes on navy, with a little falling snow between them. Perfect for winter hats and mittens.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nNo float is longer than 5 stitches. Keep the floats loose across the back so the fabric doesn't pucker.";
+            return c;
+        }
+
+        static Chart oxoPeerie() {
+            String[] colours = {
+                    "AAAAAAAAAAAA",
+                    "AABBAABAAAAB",
+                    "ABAABAABAABA",
+                    "BAAAABAABBAA",
+                    "BAAAABAABBAA",
+                    "BAAAABAABBAA",
+                    "ABAABAABAABA",
+                    "AABBAABAAAAB",
+                    "AAAAAAAAAAAA",
+                    "CCCCCCCCCCCC" };
+            Chart c = build("OXO Peerie", true, false, repeatRow("............", 10), colours,
+                    new Yarn("A", "Cream", new Color(0xF3EAD7)), new Yarn("B", "Red", new Color(0xA8322D)), new Yarn("C", "Navy", new Color(0x1F3A68)));
+            c.description = "The classic Fair Isle band of O and X shapes, between a stripe of a third colour. \"Peerie\" is Shetland for small.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nOnly two colours are used in any one round, as in traditional Fair Isle.\nChange the colours of the stripe and the motifs every repeat for a true Fair Isle look.";
+            return c;
+        }
+
+        static Chart christmasTrees() {
+            String[] colours = {
+                    "AAAAAA",
+                    "ADAADA",
+                    "AAAAAA",
+                    "AABAAA",
+                    "ABBBAA",
+                    "BBBBBA",
+                    "ABBBAA",
+                    "BBBBBA",
+                    "AACAAA",
+                    "AACAAA" };
+            Chart c = build("Christmas Trees", true, false, repeatRow("......", 10), colours,
+                    new Yarn("A", "Midnight blue", new Color(0x1C2A4A)), new Yarn("B", "Pine green", new Color(0x3E8E4E)), new Yarn("C", "Bark brown", new Color(0x8A5A3B)), new Yarn("D", "Snow white", new Color(0xF6F1E7)));
+            c.description = "A row of pine trees with brown trunks, and snowflakes in between, on a midnight-blue sky.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nFour colours are used, but never more than two in a round.\nThe longest float is 5 stitches.";
+            return c;
+        }
+
+        static Chart littleStars() {
+            String[] colours = {
+                    "BAAABABA",
+                    "AAAAABBB",
+                    "BAAABBBB",
+                    "AAAAABBB",
+                    "BAAABABA",
+                    "BABABAAA",
+                    "ABBBAAAA",
+                    "BBBBBAAA",
+                    "ABBBAAAA",
+                    "BABABAAA" };
+            Chart c = build("Little Stars", true, false, repeatRow("........", 10), colours,
+                    new Yarn("A", "Midnight blue", new Color(0x1C2A4A)), new Yarn("B", "Gold", new Color(0xD9B44A)));
+            c.description = "Small gold stars scattered across a midnight-blue sky, in staggered rows.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nThe longest float is 5 stitches.";
+            return c;
+        }
+
+        static Chart hearts() {
+            String[] colours = {
+                    "BBAAABBB",
+                    "BBAAABBB",
+                    "BAAAAABB",
+                    "AABABAAB",
+                    "ABBBBBAA",
+                    "ABBBBBAA",
+                    "AABBBAAA",
+                    "BAABAABA" };
+            Chart c = build("Hearts", true, false, repeatRow("........", 8), colours,
+                    new Yarn("A", "Pale pink", new Color(0xF2D4D7)), new Yarn("B", "Red", new Color(0xB8323A)));
+            c.description = "Little red hearts in staggered rows. Lovely for a baby's cardigan, a cushion or a Valentine's hat.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nThe longest float is 5 stitches.";
+            return c;
+        }
+
+        static Chart zigzag() {
+            String[] colours = {
+                    "ABBBABBB",
+                    "BBBAAABB",
+                    "BBAAAAAB",
+                    "BAAABAAA",
+                    "AAABBBAA",
+                    "AABBBBBA" };
+            Chart c = build("Zigzag", true, false, repeatRow("........", 6), colours,
+                    new Yarn("A", "Mustard", new Color(0xD9A23A)), new Yarn("B", "Charcoal", new Color(0x3A3634)));
+            c.description = "Bold two-colour zigzag stripes. Striking on a cowl or a pair of socks.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nThe longest float is 5 stitches.";
+            return c;
+        }
+
+        static Chart diamondLattice() {
+            String[] colours = {
+                    "ABAAAB",
+                    "AABABA",
+                    "AAABAA",
+                    "AABABA",
+                    "ABAAAB",
+                    "BAAAAA" };
+            Chart c = build("Diamond Lattice", true, false, repeatRow("......", 6), colours,
+                    new Yarn("A", "Heather grey", new Color(0xB9B3AD)), new Yarn("B", "Plum", new Color(0x6B2E4F)));
+            c.description = "A trellis of thin diagonal lines making diamonds, in plum on heather grey.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nThe longest float is 5 stitches.";
+            return c;
+        }
+
+        static Chart polkaDots() {
+            String[] colours = {
+                    "AAAABB",
+                    "AAAABB",
+                    "AAAAAA",
+                    "ABBAAA",
+                    "ABBAAA",
+                    "AAAAAA" };
+            Chart c = build("Polka Dots", true, false, repeatRow("......", 6), colours,
+                    new Yarn("A", "Teal", new Color(0x2E7D7A)), new Yarn("B", "Cream", new Color(0xF3EAD7)));
+            c.description = "Cheerful two-stitch dots in staggered rows: an easy, quick colourwork pattern.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nThe floats are 4 stitches at most.";
+            return c;
+        }
+
+        static Chart gingham() {
+            String[] colours = {
+                    "BBAA",
+                    "BBAA",
+                    "CCBB",
+                    "CCBB" };
+            Chart c = build("Gingham", true, false, repeatRow("....", 4), colours,
+                    new Yarn("A", "White", new Color(0xF6F1E7)), new Yarn("B", "Sky blue", new Color(0x8DB3D6)), new Yarn("C", "Denim blue", new Color(0x2F5E8F)));
+            c.description = "The checked pattern of picnic tablecloths, in three tones of one colour. Where the light stripes cross, the colour is darkest.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nEach round uses only two of the three colours, and floats are only 2 stitches long.";
+            return c;
+        }
+
+        static Chart birdsEye() {
+            String[] colours = {
+                    "BA",
+                    "AB" };
+            Chart c = build("Bird's Eye", true, false, repeatRow("..", 2), colours,
+                    new Yarn("A", "Oatmeal", new Color(0xE8DCC4)), new Yarn("B", "Chocolate", new Color(0x6B4A35)));
+            c.description = "A tiny two-colour speckle, alternating every stitch and every round. It makes a firm, warm, hard-wearing fabric.";
+            c.notes = "Knitted in the round: every round is read from right to left.\nThe colours change every stitch, so there are no floats to manage: a good way to practise holding two yarns.\nOften used for the palms of mittens and the soles of socks.";
+            return c;
+        }
+
+        static Chart bretonStripes() {
+            String[] colours = {
+                    "AAAA",
+                    "AAAA",
+                    "AAAA",
+                    "AAAA",
+                    "BBBB",
+                    "BBBB" };
+            Chart c = build("Breton Stripes", true, false, repeatRow("....", 6), colours,
+                    new Yarn("A", "White", new Color(0xF6F1E7)), new Yarn("B", "Navy", new Color(0x1F3A68)));
+            c.description = "Classic navy and white stripes, like a French sailor's top. The simplest colourwork of all.";
+            c.notes = "Each round uses only one colour, so there are no floats.\nCarry the colour you aren't using loosely up the inside at the start of the round, instead of cutting it each time.";
+            return c;
+        }
+
+        static Chart eyeletRows() {
+            Chart c = build("Eyelet Rows", false, false, new String[] {
+                    "..",
+                    "O/",
+                    "..",
+                    ".." }, null);
+            c.description = "Rows of little holes on a plain background. A pretty, easy first lace for baby blankets and summer tops.";
+            c.notes = "Row 3 makes the holes: each yo makes a hole and each k2tog makes up for it.\nThread a ribbon through the eyelets for a baby cardigan or a drawstring bag.";
+            return c;
+        }
+
+        static Chart diagonalEyelets() {
+            Chart c = build("Diagonal Eyelets", false, false, new String[] {
+                    "......",
+                    "O..../",
+                    "......",
+                    "/O....",
+                    "......",
+                    "./O...",
+                    "......",
+                    "../O..",
+                    "......",
+                    ".../O.",
+                    "......",
+                    "..../O" }, null);
+            c.description = "A line of eyelets climbing diagonally across the fabric, one stitch further left on every right-side row.";
+            c.notes = "Each yo is paired with a k2tog, so the stitch count never changes.\nOn some rows the k2tog falls at the start of the repeat and the yo at the end: the chart and instructions show this for you.";
+            return c;
+        }
+
+        static Chart waveCable() {
+            Chart c = build("Wave Cable", false, true, new String[] {
+                    "--......--",
+                    "--......--",
+                    "--......--",
+                    "--......--",
+                    "--......--",
+                    "--GGGGGG--",
+                    "--......--",
+                    "--......--",
+                    "--......--",
+                    "--......--",
+                    "--......--",
+                    "--HHHHHH--" }, null);
+            c.description = "A single cable that crosses one way and then the other, making a gentle wave.";
+            c.notes = "This is a panel: work its 10 stitches wherever you want the wave, with a stitch marker each side.\nC6B on row 1 and C6F on row 7 swing the cable from side to side.";
+            return c;
+        }
+
+        static Chart eyeletRib() {
+            Chart c = build("Eyelet Rib", false, false, new String[] {
+                    "...--",
+                    "...--",
+                    "...--",
+                    "\\O.--" }, null);
+            c.description = "A rib with a little eyelet in each knit column, every fourth row. Stretchy and pretty for socks and cuffs.";
+            c.notes = "The yo makes a hole and the ssk next to it makes up for it, so the rib stays the same width.\nOn wrong-side rows, knit the knits and purl the purls as they face you.";
+            return c;
+        }
+
+        static Chart brokenRib() {
+            Chart c = build("Broken Rib", false, false, new String[] {
+                    "-.",
+                    ".." }, null);
+            c.description = "A simple, squishy texture: one row of knit, then one row of rib. Lies flat and looks neat on both sides.";
+            c.notes = "Knit the right-side rows; work k1, p1 on the wrong-side rows.\nGood for scarves and blankets, where you want texture without much thought.";
+            return c;
+        }
+
+        static Chart diagonalRib() {
+            Chart c = build("Diagonal Rib", false, false, new String[] {
+                    ".--.",
+                    "..--",
+                    "-..-",
+                    "--.." }, null);
+            c.description = "Knit and purl columns that step over one stitch every row, making slanting ridges.";
+            c.notes = "Each row is a k2, p2 rib, moved over by one stitch from the row before.\nLovely for hats and scarves. It doesn't pull in like an ordinary rib.";
+            return c;
+        }
+
+        static Chart diamondBrocade() {
+            Chart c = build("Diamond Brocade", false, false, new String[] {
+                    "...-.-..",
+                    "..-...-.",
+                    ".-.....-",
+                    "-.......",
+                    ".-.....-",
+                    "..-...-.",
+                    "...-.-..",
+                    "....-..." }, null);
+            c.description = "A lattice of diamonds outlined in purl stitches on a smooth background. A traditional gansey pattern.";
+            c.notes = "The purl stitches stand out from the smooth knit background, so use a plain, light-coloured yarn to show them off.\nOn wrong-side rows, knit the knits and purl the purls as they face you.";
+            return c;
+        }
+
+        static Chart littleBobbles() {
+            Chart c = build("Little Bobbles", false, false, new String[] {
+                    "......",
+                    "....@.",
+                    "......",
+                    "......",
+                    "......",
+                    ".@....",
+                    "......",
+                    "......" }, null);
+            c.description = "Scattered bobbles on stocking stitch, in staggered rows. Playful on a baby blanket or a hat.";
+            c.notes = "Make each bobble on a right-side row, and work it firmly so it pops out on the right side.\nThe stitch above a bobble is purled as usual on the wrong-side row.";
             return c;
         }
 
@@ -2257,7 +2575,6 @@ public class KnittingPattern {
                 header p{margin:.6rem auto 1.4rem;font-size:1.25rem;max-width:640px;opacity:.95}
                 .btn{display:inline-block;margin:.3rem;padding:.8rem 1.3rem;border-radius:999px;font:bold 1rem sans-serif;text-decoration:none}
                 .btn.light{background:#FFF8F0;color:#7A3E2E}.btn.line{border:2px solid #FFF8F0;color:#FFF8F0}
-                .btn.get{background:#7A3E2E;color:#FFF8F0;margin:0}
                 h2{color:#7A3E2E;font-size:1.7rem;margin:2.6rem 0 .6rem}
                 .lead{font-size:1.15rem}
                 .shot{max-width:100%%;border:1px solid #E6DED4;border-radius:8px;box-shadow:0 6px 24px rgba(60,40,30,.12)}
@@ -2281,7 +2598,7 @@ public class KnittingPattern {
                   <p>Design, view and follow knitting charts, free. Every chart comes with written row-by-row instructions,
                   and a tracker that follows you stitch by stitch.</p>
                   <a class="btn light" href="#patterns">Try a pattern in your browser</a>
-                  <a class="btn line" href="%2$s/releases/latest">Download the app</a>
+                  <a class="btn line" href="%2$s#getting-started">Download the program</a>
                 </header>
                 <main>
                   <h2>Charts and instructions that always agree</h2>
@@ -2315,11 +2632,12 @@ public class KnittingPattern {
                     <li><b>Print and share:</b> print the pattern, or save it as a web page, a picture or plain text.</li>
                   </ul>
                   <h2>Get the program</h2>
-                  <p>Knitting Pattern Studio is free for Mac (Apple Silicon and Intel), Windows and Linux. Everything it needs
-                  is included, so there's nothing else to install.</p>
-                  <p><a class="btn get" href="%2$s/releases/latest">Download the app</a></p>
-                  <p>The <a href="%2$s#getting-started">step-by-step instructions</a> show which file to choose and how to open it
-                  the first time.</p>
+                  <p>It's one file that runs on a Mac, Windows or Linux computer, using Java (which is also free).</p>
+                  <ol>
+                    <li>Install Java from <a href="https://adoptium.net">adoptium.net</a> (once).</li>
+                    <li>Download <b>KnittingPattern.java</b> from the <a href="%2$s">project page</a>.</li>
+                    <li>Start it, following the <a href="%2$s#getting-started">step-by-step instructions</a>.</li>
+                  </ol>
                   <footer>
                     <p>Copyright Mario Gianota 2026. All rights reserved. Free to download and use for personal knitting,
                     but not to copy, change or redistribute without permission.</p>

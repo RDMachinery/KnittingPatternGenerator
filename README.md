@@ -30,7 +30,7 @@ Knitting Pattern Studio shows a knitting chart and its written, row-by-row instr
 
 You need two things: **Java** (a free program that runs Knitting Pattern Studio) and the file **`KnittingPattern.java`** from this page.
 
-#### 1. Install Java (once)
+### 1. Install Java (once)
 
 1. Go to **[adoptium.net](https://adoptium.net)**.
 2. Click the big download button. It picks the right version for your computer.
@@ -38,11 +38,11 @@ You need two things: **Java** (a free program that runs Knitting Pattern Studio)
 
 Any version from **Java 17** upwards will work. If you already have Java, you can skip this step.
 
-#### 2. Download the program
+### 2. Download the program
 
 At the top of this page, click **`KnittingPattern.java`**, then the **download** button (the arrow pointing down, on the right). Save it somewhere easy to find, such as your **Documents** folder.
 
-#### 3. Start it
+### 3. Start it
 
 **On Windows**
 1. Open the folder containing `KnittingPattern.java`.
@@ -194,15 +194,30 @@ Untick **Stitch pictures** to see the standard symbols used in printed patterns,
 | Pattern | Type | Repeat |
 |---|---|---|
 | **Fair Isle Diamonds** | Two-colour stranded knitting, in the round | 12 stitches × 12 rounds |
+| **Nordic Star** | An eight-pointed star in the Selbu tradition | 16 stitches × 16 rounds |
+| **Snowflake** | White snowflakes on navy, with falling snow between | 10 stitches × 10 rounds |
+| **OXO Peerie** | The classic Fair Isle band of O and X shapes, in three colours | 12 stitches × 10 rounds |
+| **Christmas Trees** | Pine trees with trunks and snowflakes, in four colours | 6 stitches × 10 rounds |
+| **Little Stars** | Small gold stars in staggered rows on midnight blue | 8 stitches × 10 rounds |
+| **Hearts** | Little red hearts in staggered rows | 8 stitches × 8 rounds |
 | **Houndstooth** | The classic broken check, in two colours, in the round | 4 stitches × 4 rounds |
+| **Zigzag** | Bold two-colour zigzag stripes | 8 stitches × 6 rounds |
+| **Diamond Lattice** | A trellis of thin diagonal lines | 6 stitches × 6 rounds |
 | **Chequerboard** | Bold two-colour squares, in the round | 8 stitches × 8 rounds |
+| **Polka Dots** | Cheerful two-stitch dots in staggered rows | 6 stitches × 6 rounds |
+| **Gingham** | The picnic-tablecloth check, in three tones | 4 stitches × 4 rounds |
 | **Norwegian Lice** | Tiny scattered dots of colour, from traditional Norwegian jumpers | 4 stitches × 4 rounds |
+| **Bird's Eye** | A tiny two-colour speckle, alternating every stitch | 2 stitches × 2 rounds |
+| **Breton Stripes** | Navy and white sailor stripes | 4 stitches × 6 rounds |
 | **Feather and Fan Lace** | The classic Shetland "Old Shale" lace | 18 stitches × 4 rows |
 | **Horseshoe Lace** | Traditional lace arches with a central double decrease | 10 stitches × 8 rows |
 | **Fishtail Lace** | Little V shapes stacked in columns: a gentle first lace | 8 stitches × 6 rows |
+| **Eyelet Rows** | Rows of little holes on a plain background | 2 stitches × 4 rows |
+| **Diagonal Eyelets** | A line of eyelets climbing diagonally across the fabric | 6 stitches × 12 rows |
 | **Rope Cable (C8F)** | A bold cable panel | 12 stitches × 8 rows |
 | **Horseshoe Cable** | Two cables crossing away from each other | 12 stitches × 8 rows |
 | **Braid Cable** | Three strands plaited like a braid of hair | 13 stitches × 4 rows |
+| **Wave Cable** | A cable that crosses one way, then the other, in a gentle wave | 10 stitches × 12 rows |
 | **Honeycomb Cable** | An all-over texture of interlocking cable cells | 8 stitches × 8 rows |
 | **Bobble Diamond** | An aran panel: travelling stitches form diamonds, each with a bobble | 13 stitches × 8 rows |
 | **Mini Cable Rib** | Rib with a tiny 2-stitch cable up each knit column | 4 stitches × 4 rows |
@@ -211,9 +226,14 @@ Untick **Stitch pictures** to see the standard symbols used in printed patterns,
 | **1×1 Rib** | Single rib, for cuffs, neckbands and cardigan edges | 2 stitches × 2 rows |
 | **2×2 Rib** | Stretchy ribbing for cuffs and brims | 4 stitches × 2 rows |
 | **Twisted Rib** | 1×1 rib with crisp, twisted knit stitches | 2 stitches × 2 rows |
+| **Eyelet Rib** | A rib with a little eyelet in each knit column | 5 stitches × 4 rows |
+| **Broken Rib** | One row of knit, one row of rib: squishy and flat | 2 stitches × 2 rows |
+| **Diagonal Rib** | Knit and purl columns stepping over to make slanting ridges | 4 stitches × 4 rows |
 | **Seed (Moss) Stitch** | A flat, reversible bumpy texture | 2 stitches × 2 rows |
 | **Double Moss Stitch** | Little blocks of knit and purl (US: moss stitch) | 4 stitches × 4 rows |
 | **Basketweave** | Blocks of knit and purl, like a woven basket | 8 stitches × 8 rows |
+| **Diamond Brocade** | Diamonds outlined in purl stitches: a traditional gansey pattern | 8 stitches × 8 rows |
+| **Little Bobbles** | Scattered bobbles in staggered rows | 6 stitches × 8 rows |
 | **Heel Stitch** | Hard-wearing slipped-stitch fabric for sock heels | 2 stitches × 2 rows |
 
 The built-in patterns can't be changed by accident. If you edit one, the program makes your own copy first.
@@ -291,7 +311,6 @@ To put it on your phone, export the web page, then email it to yourself, or save
 - `.knit` files are plain text: a few `key: value` lines, then the chart drawn with one character per stitch (`.` knit, `-` purl, `O` yarn over, `/` k2tog, `\` ssk, `^` sk2p, `L`/`R` make one, `V` slip 1, `T` k1tbl, `@` bobble, `C`/`D` C2F/C2B, `F`/`B` C4F/C4B, `G`/`H` C6F/C6B, `X`/`Y` C8F/C8B, `P`/`Q` T4F/T4B, `#` no stitch), and an optional block of yarn letters for colourwork. You can write or edit them in any text editor.
 - The pattern-list swatches and stitch pictures are drawn as vector shapes, so they stay sharp on high-resolution (Retina) screens.
 - `java KnittingPattern.java --site docs` builds the demo website: a home page plus a tracker page for every built-in pattern, ready for GitHub Pages. Run it in the folder with the screenshots so they're included.
-- **Building the apps.** `packaging/build-app.sh` (Mac and Linux) and `packaging/build-app.ps1` (Windows) use Java's `jpackage` to make a self-contained app with a trimmed-down Java runtime (only `java.base`, `java.desktop` and `java.prefs`). Each builds for the computer it runs on. The GitHub workflow in `.github/workflows/build-apps.yml` runs them on GitHub's Mac (Apple Silicon and Intel), Windows and Linux machines whenever a release is published, and attaches the results to the release. The version number comes from `VERSION` in `KnittingPattern.java`.
 - If no display is available, the program falls back to text mode automatically.
 
 ---
