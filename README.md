@@ -28,32 +28,7 @@ Knitting Pattern Studio shows a knitting chart and its written, row-by-row instr
 
 ## Getting started
 
-### The easy way: download the app
-
-Go to the **[Releases page](https://github.com/RDMachinery/KnittingPatternGenerator/releases/latest)** and download the file for your computer. Everything it needs is included, so there's nothing else to install.
-
-| Your computer | Download |
-|---|---|
-| **Mac with Apple Silicon** (M1, M2, M3, M4…) | `KnittingPatternStudio-…-mac-apple-silicon.dmg` |
-| **Mac with an Intel processor** | `KnittingPatternStudio-…-mac-intel.dmg` |
-| **Windows** | `KnittingPatternStudio-…-windows.msi` (installer) or `…-windows-portable.zip` (no installing) |
-| **Linux** (Ubuntu, Debian, Mint) | `KnittingPatternStudio-…-linux-x64.deb` |
-| **Linux** (Fedora, openSUSE) | `KnittingPatternStudio-…-linux-x64.rpm` |
-| **Linux** (anything else) | `KnittingPatternStudio-…-linux-x64.tar.gz` |
-
-Not sure which Mac you have? Choose **Apple menu → About This Mac**. If it says *Chip: Apple M…* it's Apple Silicon; if it says *Processor: … Intel* it's Intel.
-
-**On a Mac:** open the `.dmg` and drag **Knitting Pattern Studio** into your **Applications** folder. The app isn't registered with Apple, so the first time you open it your Mac will say it can't check it for malicious software. Click **Done**, then go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the message about Knitting Pattern Studio. You only need to do this once.
-
-**On Windows:** double-click the `.msi` installer. If Windows says *"Windows protected your PC"*, click **More info**, then **Run anyway**. The program is added to the Start menu and the desktop. With the portable zip, unzip it anywhere and double-click **Knitting Pattern Studio.exe** inside.
-
-**On Linux:** install the package with `sudo apt install ./KnittingPatternStudio-…-linux-x64.deb` (or `sudo dnf install ./….rpm`). It appears in your applications menu under Graphics. With the `.tar.gz`, unpack it and run `bin/Knitting Pattern Studio`.
-
-Once installed, double-clicking a saved `.knit` pattern opens it in Knitting Pattern Studio.
-
-### Or run the single Java file
-
-If you'd rather not install an app, or you want the very latest version, you can run the program straight from its source file. You need two things: **Java** (a free program that runs Knitting Pattern Studio) and the file **`KnittingPattern.java`** from this page.
+You need two things: **Java** (a free program that runs Knitting Pattern Studio) and the file **`KnittingPattern.java`** from this page.
 
 #### 1. Install Java (once)
 
